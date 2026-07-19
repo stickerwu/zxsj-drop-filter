@@ -160,27 +160,42 @@ export function DropEditorModal({
             className="flex h-[720px] max-h-[calc(100vh-2rem)] w-[min(1060px,calc(100vw-2rem))] max-w-none flex-col overflow-hidden rounded-lg"
             data-editor-layout="reference"
           >
-            <Modal.Header className="flex h-[72px] shrink-0 items-center border-b border-[var(--app-border)] px-6 py-0">
-              <div className="flex min-w-0 items-center gap-3">
-                <span className="flex size-9 shrink-0 items-center justify-center rounded-md bg-violet-100 text-violet-600 dark:bg-violet-950 dark:text-violet-300">
-                  <Gem className="size-[18px]" />
+            <Modal.Header
+              className="relative flex h-[88px] shrink-0 items-center justify-center px-6 py-0"
+              data-testid="drop-editor-header"
+            >
+              <div
+                className="flex min-w-0 items-center justify-center gap-4 text-center"
+                data-testid="drop-editor-title-group"
+              >
+                <span className="flex size-10 shrink-0 items-center justify-center rounded-md bg-violet-100 text-violet-600 dark:bg-violet-950 dark:text-violet-300">
+                  <Gem className="size-5" />
                 </span>
                 <div className="min-w-0">
-                  <Modal.Heading className="text-base font-semibold">
+                  <Modal.Heading className="text-lg font-semibold">
                     掉落表编辑器
                   </Modal.Heading>
-                  <p className="mt-1 truncate text-[11px] text-[var(--app-text-muted)]">
+                  <p className="mt-2 truncate text-xs text-[var(--app-text-muted)]">
                     维护副本、宝鉴和部位 / 属性 / 权重，保存前请确认权重为正数。
                   </p>
                 </div>
               </div>
-              <Modal.CloseTrigger aria-label="关闭编辑器" />
+              <Modal.CloseTrigger
+                aria-label="关闭编辑器"
+                className="absolute right-6 top-1/2 -translate-y-1/2"
+              />
             </Modal.Header>
 
-            <Modal.Body className="min-h-0 flex-1 overflow-hidden p-0">
-              <div className="grid h-full min-h-0 grid-cols-[230px_minmax(0,1fr)]">
-                <div className="min-h-0 overflow-y-auto border-r border-[var(--app-border)] bg-[var(--app-surface-muted)] p-5">
-                  <div className="space-y-5">
+            <Modal.Body
+              className="min-h-0 flex-1 overflow-hidden bg-[var(--app-surface-muted)] p-4"
+              data-testid="drop-editor-body"
+            >
+              <div className="grid h-full min-h-0 grid-cols-[230px_minmax(0,1fr)] gap-4">
+                <div
+                  className="min-h-0 overflow-y-auto rounded-lg bg-[var(--app-surface)] p-4 shadow-sm"
+                  data-testid="drop-editor-controls-surface"
+                >
+                  <div className="space-y-4">
                     <div className="space-y-1.5">
                       <p className="text-xs font-medium text-[var(--app-text)]">副本</p>
                       <EditorSelect
@@ -238,14 +253,17 @@ export function DropEditorModal({
                   </div>
                 </div>
 
-                <div className="min-h-0 overflow-y-auto bg-[var(--app-surface)] p-4">
+                <div
+                  className="min-h-0 overflow-y-auto rounded-lg bg-[var(--app-surface)] p-3 shadow-sm"
+                  data-testid="drop-editor-entries-surface"
+                >
                   <div className="space-y-2">
                     {entries.map((entry, index) => (
                       <div
                         key={entry.id}
                         data-testid={`drop-entry-row-${index}`}
                         data-row-density="compact"
-                        className="grid h-[46px] grid-cols-[108px_108px_80px_minmax(180px,1fr)_38px_38px] items-center gap-2 rounded-md border border-[var(--app-border)] bg-[var(--app-surface)] px-2 shadow-sm"
+                        className="grid h-[46px] grid-cols-[108px_108px_80px_minmax(180px,1fr)_38px_38px] items-center gap-2 rounded-md bg-[var(--app-surface)] px-2 shadow-sm"
                       >
                         <EditorSelect
                           compact
@@ -316,7 +334,10 @@ export function DropEditorModal({
               </div>
             </Modal.Body>
 
-            <Modal.Footer className="flex h-[72px] shrink-0 items-center border-t border-[var(--app-border)] px-6 py-0">
+            <Modal.Footer
+              className="flex h-[72px] shrink-0 items-center bg-[var(--app-surface-muted)] px-6 py-0 shadow-[0_-4px_16px_rgba(15,23,42,0.04)]"
+              data-testid="drop-editor-footer"
+            >
               <div className="mr-auto min-h-5 text-xs text-red-600">
                 {hasInvalidWeight ? "权重必须是大于 0 的数字" : null}
               </div>
