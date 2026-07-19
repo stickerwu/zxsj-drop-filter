@@ -68,7 +68,7 @@ export function AppShell() {
             <FilterSidebar />
           </Panel>
           <PanelDivider />
-          <Panel defaultSize={49} minSize={35}>
+          <Panel defaultSize={55} minSize={40}>
             <main className="flex h-full min-w-0 flex-col bg-[var(--app-surface)]">
               <SummaryStrip
                 recommendationCount={recommendations.length}
@@ -78,7 +78,7 @@ export function AppShell() {
             </main>
           </Panel>
           <PanelDivider />
-          <Panel defaultSize={30} minSize={22}>
+          <Panel defaultSize={24} minSize={20}>
             <aside className="flex h-full min-w-0 flex-col bg-[var(--app-surface)]">
               <div className="flex h-16 shrink-0 items-center justify-between border-b border-[var(--app-border)] px-4">
                 <div className="min-w-0">

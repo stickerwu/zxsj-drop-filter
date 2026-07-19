@@ -33,24 +33,24 @@ export function DungeonDetailTable({
 
   return (
     <div className="relative min-h-0 flex-1 overflow-hidden">
-      <Table className="h-full rounded-none border-0 shadow-none" variant="secondary">
+      <Table className="result-table h-full rounded-none border-0 shadow-none" variant="secondary">
         <Table.ScrollContainer className="h-full overflow-auto">
-          <Table.Content aria-label="副本宝鉴明细" className="min-w-[980px]">
-            <Table.Header className="sticky top-0 z-10 bg-[var(--app-surface-muted)]">
-              <Table.Column className="w-16 text-center">排名</Table.Column>
-              <Table.Column isRowHeader>副本</Table.Column>
-              <Table.Column>宝鉴</Table.Column>
-              <Table.Column>命中概率</Table.Column>
-              <Table.Column>期望次数</Table.Column>
-              <Table.Column>命中/总数</Table.Column>
-              <Table.Column className="min-w-[300px]">预览（点选看完整）</Table.Column>
+          <Table.Content aria-label="副本宝鉴明细" className="min-w-[900px]" data-density="reference">
+            <Table.Header className="result-table-header sticky top-0 z-10">
+              <Table.Column className="w-14 text-center" data-readable-header="true">排名</Table.Column>
+              <Table.Column data-readable-header="true" isRowHeader>副本</Table.Column>
+              <Table.Column data-readable-header="true">宝鉴</Table.Column>
+              <Table.Column data-readable-header="true">命中概率</Table.Column>
+              <Table.Column data-readable-header="true">期望次数</Table.Column>
+              <Table.Column data-readable-header="true">命中/总数</Table.Column>
+              <Table.Column className="min-w-[260px]" data-readable-header="true">预览（点选看完整）</Table.Column>
             </Table.Header>
             <Table.Body>
               {rows.map((row, index) => (
                 <Table.Row
                   key={`${row.recommendationId}-${row.detail.dungeonId}`}
                   id={`${row.recommendationId}-${row.detail.dungeonId}`}
-                  className="cursor-pointer"
+                  className="result-table-row cursor-pointer"
                   onClick={() => selectRecommendation(row.recommendationId)}
                 >
                   <Table.Cell className="text-center font-mono text-xs text-[var(--app-text-muted)]">

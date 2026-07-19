@@ -29,6 +29,7 @@
   --app-surface-muted: #f7f9fb;
   --app-control: #f1f3f5;
   --app-control-hover: #e8ecef;
+  --app-table-header: #f4f6f8;
   --app-border: #e1e6eb;
   --app-text: #17202e;
   --app-text-muted: #667285;
@@ -63,6 +64,7 @@
   --app-surface-muted: #20252a;
   --app-control: #252a30;
   --app-control-hover: #30363d;
+  --app-table-header: #22272d;
   --app-border: #30373e;
   --app-text: #f1f4f6;
   --app-text-muted: #9aa5b1;
@@ -150,6 +152,59 @@ select:focus-visible {
   background: var(--app-accent) !important;
   color: white !important;
   box-shadow: 0 4px 10px color-mix(in srgb, var(--app-accent) 20%, transparent) !important;
+}
+
+.reference-tabs [data-slot="tabs-tab"] {
+  color: var(--app-text-muted) !important;
+  font-size: 12px !important;
+  font-weight: 500 !important;
+  opacity: 1 !important;
+}
+
+.reference-tabs [data-slot="tabs-tab"][data-selected="true"] {
+  color: var(--app-accent) !important;
+  font-weight: 600 !important;
+}
+
+.reference-tabs [data-slot="tabs-indicator"] {
+  background: var(--app-accent) !important;
+}
+
+.result-table [data-slot="table-content"] {
+  color: var(--app-text) !important;
+  font-size: 13px !important;
+}
+
+.result-table [data-slot="table-header"] {
+  background: var(--app-table-header) !important;
+  box-shadow: inset 0 -1px 0 var(--app-border);
+}
+
+.result-table [data-slot="table-column"] {
+  height: 42px !important;
+  padding-inline: 14px !important;
+  background: var(--app-table-header) !important;
+  color: var(--app-text-muted) !important;
+  font-size: 12px !important;
+  font-weight: 600 !important;
+  opacity: 1 !important;
+}
+
+.result-table [data-slot="table-row"] {
+  height: 46px !important;
+  border-bottom: 1px solid var(--app-border);
+  color: var(--app-text) !important;
+}
+
+.result-table [data-slot="table-row"]:hover {
+  background: var(--app-surface-muted);
+}
+
+.result-table [data-slot="table-cell"] {
+  height: 46px !important;
+  padding-inline: 14px !important;
+  color: inherit !important;
+  font-size: 13px !important;
 }
 
 @keyframes tab-enter {

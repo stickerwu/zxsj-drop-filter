@@ -32,25 +32,25 @@ export function HitItemTable({
 
   return (
     <div className="relative min-h-0 flex-1 overflow-hidden">
-      <Table className="h-full rounded-none border-0 shadow-none" variant="secondary">
+      <Table className="result-table h-full rounded-none border-0 shadow-none" variant="secondary">
         <Table.ScrollContainer className="h-full overflow-auto">
-          <Table.Content aria-label="命中装备列表" className="min-w-[980px]">
-            <Table.Header className="sticky top-0 z-10 bg-[var(--app-surface-muted)]">
-              <Table.Column isRowHeader>副本</Table.Column>
-              <Table.Column>宝鉴</Table.Column>
-              <Table.Column>部位</Table.Column>
-              <Table.Column>属性</Table.Column>
-              <Table.Column>概率</Table.Column>
-              <Table.Column>期望次数</Table.Column>
-              <Table.Column>权重</Table.Column>
-              <Table.Column>展开属性</Table.Column>
+          <Table.Content aria-label="命中装备列表" className="min-w-[900px]" data-density="reference">
+            <Table.Header className="result-table-header sticky top-0 z-10">
+              <Table.Column data-readable-header="true" isRowHeader>副本</Table.Column>
+              <Table.Column data-readable-header="true">宝鉴</Table.Column>
+              <Table.Column data-readable-header="true">部位</Table.Column>
+              <Table.Column data-readable-header="true">属性</Table.Column>
+              <Table.Column data-readable-header="true">概率</Table.Column>
+              <Table.Column data-readable-header="true">期望次数</Table.Column>
+              <Table.Column data-readable-header="true">权重</Table.Column>
+              <Table.Column data-readable-header="true">展开属性</Table.Column>
             </Table.Header>
             <Table.Body>
               {rows.map((row) => (
                 <Table.Row
                   key={row.id}
                   id={row.id}
-                  className="cursor-pointer"
+                  className="result-table-row cursor-pointer"
                   onClick={() => selectRecommendation(row.recommendationId)}
                 >
                   <Table.Cell className="whitespace-nowrap">{row.dungeonName}</Table.Cell>
