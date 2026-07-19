@@ -1,39 +1,34 @@
-import { useMemo, useRef, useState } from "react"
+import { useMemo, useState } from "react"
 import {
   Check,
   Clipboard,
   Database,
   FileDown,
-  FileUp,
-  Info,
-  RotateCcw,
   Save,
   Search,
-  Settings2,
   Sparkles,
   Trash2,
 } from "lucide-react"
 import { toast, Toaster } from "sonner"
 import { recommendTreasures } from "@/domain/recommendations"
-import { parseJsonData, parseZxData, serializeJsonData, serializeZxData } from "@/domain/serialization"
 import { expandAttributeCombo } from "@/domain/attributes"
-import { FILTER_ATTRIBUTES, type AttributeFilterName, type DropDataset, type DropEntry, type MatchMode } from "@/domain/types"
+import { FILTER_ATTRIBUTES, type DropDataset, type DropEntry } from "@/domain/types"
 import { useAppStore } from "@/store/app-store"
+import { AppToolbar } from "@/components/app/app-toolbar"
+import { FilterSidebar } from "@/components/app/filter-sidebar"
+import { SummaryStrip } from "@/components/app/summary-strip"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/components/ui/resizable"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
-
-const attributes = [...FILTER_ATTRIBUTES]
+import { TooltipProvider } from "@/components/ui/tooltip"
 
 function formatPercent(value: number) {
   return `${(value * 100).toFixed(2)}%`
@@ -48,217 +43,6 @@ function sectionTitle(title: string, count?: number) {
     <div className="mb-2 flex items-center justify-between">
       <h2 className="text-sm font-semibold text-slate-900">{title}</h2>
       {count !== undefined && <Badge variant="secondary">{count}</Badge>}
-    </div>
-  )
-}
-
-function FilterGroup({
-  title,
-  values,
-  selected,
-  onChange,
-  columns = 3,
-}: {
-  title: string
-  values: string[]
-  selected: string[]
-  onChange: (value: string[]) => void
-  columns?: number
-}) {
-  const gridClass = columns === 1 ? "grid-cols-1" : columns === 2 ? "grid-cols-2" : "grid-cols-3"
-  const toggle = (value: string) => {
-    onChange(selected.includes(value) ? selected.filter((item) => item !== value) : [...selected, value])
-  }
-  return (
-    <section className="border-b border-slate-200 px-4 py-3">
-      {sectionTitle(title, selected.length || undefined)}
-      <div className={`grid ${gridClass} gap-1.5`}>
-        {values.map((value) => (
-          <Button
-            key={value}
-            type="button"
-            variant={selected.includes(value) ? "default" : "outline"}
-            size="sm"
-            className="h-8 justify-center px-2 text-xs"
-            onClick={() => toggle(value)}
-          >
-            {value}
-          </Button>
-        ))}
-      </div>
-      <div className="mt-2 flex gap-2">
-        <Button type="button" size="sm" variant="ghost" className="h-7 px-2 text-xs" onClick={() => onChange(values)}>
-          全选
-        </Button>
-        <Button type="button" size="sm" variant="ghost" className="h-7 px-2 text-xs" onClick={() => onChange([])}>
-          不限
-        </Button>
-      </div>
-    </section>
-  )
-}
-
-function FilterSidebar() {
-  const filters = useAppStore((state) => state.filters)
-  const dataset = useAppStore((state) => state.dataset)
-  const setFilter = useAppStore((state) => state.setFilter)
-  return (
-    <aside className="flex h-full min-w-0 flex-col bg-white">
-      <div className="border-b border-slate-200 bg-slate-50 px-4 py-3">
-        <div className="flex items-center gap-2">
-          <SlidersHorizontalIcon />
-          <div>
-            <h1 className="text-base font-bold tracking-tight text-slate-950">筛选条件</h1>
-            <p className="mt-0.5 text-xs text-slate-500">可以不选，结果会自动刷新</p>
-          </div>
-        </div>
-      </div>
-      <ScrollArea className="min-h-0 flex-1">
-        <FilterGroup
-          title="想要的属性"
-          values={attributes}
-          selected={filters.attributes}
-          onChange={(value) => setFilter("attributes", value as AttributeFilterName[])}
-        />
-        <div className="border-b border-slate-200 px-4 py-3">
-          <Label className="text-xs font-semibold text-slate-700">属性匹配</Label>
-          <RadioGroup
-            className="mt-2 grid gap-2"
-            value={filters.mode}
-            onValueChange={(value) => setFilter("mode", value as MatchMode)}
-          >
-            <label className="flex cursor-pointer items-center gap-2 text-xs text-slate-600">
-              <RadioGroupItem value="any" />
-              命中任一（推荐）
-            </label>
-            <label className="flex cursor-pointer items-center gap-2 text-xs text-slate-600">
-              <RadioGroupItem value="all" />
-              同一词条全满足
-            </label>
-          </RadioGroup>
-        </div>
-        <FilterGroup
-          title="装备部位"
-          values={dataset.slots}
-          selected={filters.slots}
-          onChange={(value) => setFilter("slots", value)}
-        />
-        <FilterGroup
-          title="限定副本"
-          values={dataset.dungeons.map((dungeon) => dungeon.name)}
-          selected={filters.dungeons}
-          onChange={(value) => setFilter("dungeons", value)}
-          columns={1}
-        />
-        <div className="px-4 py-4">
-          <div className="rounded-md border border-teal-200 bg-teal-50 p-3 text-xs leading-5 text-teal-900">
-            <div className="mb-1 flex items-center gap-1.5 font-semibold"><Info className="h-3.5 w-3.5" />计算说明</div>
-            <p>命中概率 = 命中词条权重之和 ÷ 当前宝鉴总权重。</p>
-            <p>期望次数 = 1 ÷ 命中概率。</p>
-          </div>
-        </div>
-      </ScrollArea>
-    </aside>
-  )
-}
-
-function SlidersHorizontalIcon() {
-  return <Settings2 className="h-4 w-4 text-teal-700" />
-}
-
-function CommandBar({ onOpenEditor }: { onOpenEditor: () => void }) {
-  const clearFilters = useAppStore((state) => state.clearFilters)
-  const setDataset = useAppStore((state) => state.setDataset)
-  const inputRef = useRef<HTMLInputElement>(null)
-  const handleFile = async (file?: File) => {
-    if (!file) return
-    try {
-      const parsed = file.name.toLowerCase().endsWith(".zx")
-        ? parseZxData(new Uint8Array(await file.arrayBuffer()))
-        : parseJsonData(await file.text())
-      setDataset(parsed.dataset)
-      toast.success(`已载入 ${file.name}`)
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : "数据文件解析失败")
-    }
-  }
-  const copyAll = async () => {
-    await navigator.clipboard.writeText("诛仙高手秘境掉落软件")
-    toast.success("已复制项目标题")
-  }
-  const exportJson = () => {
-    const dataset = useAppStore.getState().dataset
-    const blob = new Blob([serializeJsonData(dataset)], { type: "application/json;charset=utf-8" })
-    const url = URL.createObjectURL(blob)
-    const anchor = document.createElement("a")
-    anchor.href = url
-    anchor.download = "drop-tables.json"
-    anchor.click()
-    URL.revokeObjectURL(url)
-    toast.success("JSON 数据已导出")
-  }
-  const exportZx = () => {
-    const dataset = useAppStore.getState().dataset
-    const bytes = serializeZxData(dataset)
-    const copy = new Uint8Array(bytes.byteLength)
-    copy.set(bytes)
-    const blob = new Blob([copy.buffer], { type: "application/octet-stream" })
-    const url = URL.createObjectURL(blob)
-    const anchor = document.createElement("a")
-    anchor.href = url
-    anchor.download = "drop_tables.zx"
-    anchor.click()
-    URL.revokeObjectURL(url)
-    toast.success(".zx 数据已导出")
-  }
-  return (
-    <header className="flex h-16 items-center justify-between border-b border-slate-200 bg-white px-5">
-      <div className="flex items-center gap-3">
-        <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-teal-700 text-white shadow-sm"><Sparkles className="h-4 w-4" /></div>
-        <div>
-          <div className="flex items-center gap-2">
-            <span className="text-base font-bold tracking-tight text-slate-950">诛仙高手秘境掉落软件</span>
-          </div>
-          <p className="text-xs text-slate-500">选择属性/部位即可自动推荐宝鉴</p>
-        </div>
-      </div>
-      <div className="flex items-center gap-2">
-        <input ref={inputRef} type="file" accept=".json,.zx,application/json,application/octet-stream" className="hidden" onChange={(event) => void handleFile(event.target.files?.[0])} />
-        <Button variant="outline" size="sm" onClick={() => inputRef.current?.click()}><FileUp />打开数据</Button>
-        <Button variant="outline" size="sm" onClick={exportJson}><FileDown />导出 JSON</Button>
-        <Button variant="outline" size="sm" onClick={exportZx}><FileDown />导出 .zx</Button>
-        <Button variant="outline" size="sm" onClick={onOpenEditor}><Database />数据编辑</Button>
-        <Button variant="outline" size="sm" onClick={() => { clearFilters(); toast.success("筛选条件已清空") }}><RotateCcw />清空条件</Button>
-        <TooltipProvider>
-          <Tooltip>
-            <TooltipTrigger asChild><Button variant="ghost" size="icon" aria-label="复制标题" onClick={() => void copyAll()}><Clipboard /></Button></TooltipTrigger>
-            <TooltipContent>复制当前摘要</TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
-      </div>
-    </header>
-  )
-}
-
-function SummaryBanner({ recommendationCount, matchedRows }: { recommendationCount: number; matchedRows: number }) {
-  const filters = useAppStore((state) => state.filters)
-  const attributesText = filters.attributes.length ? filters.attributes.join(" + ") : "不限属性"
-  const modeText = filters.mode === "any" ? "命中任一" : "同一词条全满足"
-  return (
-    <div className="border-b border-teal-200 bg-teal-50 px-4 py-3">
-      <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-teal-950">
-        <span className="font-semibold">条件：</span>
-        <span>{attributesText}</span><span className="text-teal-500">|</span>
-        <span>{modeText}</span><span className="text-teal-500">|</span>
-        <span>{filters.slots.length ? `${filters.slots.length} 个部位` : "部位不限"}</span><span className="text-teal-500">|</span>
-        <span>{filters.dungeons.length ? `${filters.dungeons.length} 个副本` : "副本不限"}</span>
-      </div>
-      <div className="mt-1 flex items-center gap-2 text-xs text-teal-800">
-        <Check className="h-3.5 w-3.5" />
-        <span>共命中 {matchedRows} 条掉落</span>
-        <span className="text-teal-500">·</span>
-        <span>{recommendationCount} 个推荐宝鉴</span>
-      </div>
     </div>
   )
 }
@@ -567,7 +351,7 @@ function App() {
   return (
     <TooltipProvider>
       <div className="flex h-screen min-h-[720px] flex-col overflow-hidden bg-slate-100">
-        <CommandBar onOpenEditor={() => setEditorOpen(true)} />
+        <AppToolbar onOpenEditor={() => setEditorOpen(true)} />
         <div className="min-h-0 flex-1 p-3">
           <ResizablePanelGroup direction="horizontal" className="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
             <ResizablePanel defaultSize={21} minSize={17}>
@@ -576,7 +360,7 @@ function App() {
             <ResizableHandle withHandle />
             <ResizablePanel defaultSize={49} minSize={35}>
               <main className="flex h-full min-w-0 flex-col">
-                <SummaryBanner recommendationCount={recommendations.length} matchedRows={matchedRows} />
+                <SummaryStrip recommendationCount={recommendations.length} matchedRows={matchedRows} />
                 <Tabs value={activeResultTab} onValueChange={(value) => setResultTab(value as typeof activeResultTab)} className="flex min-h-0 flex-1 flex-col">
                   <div className="border-b border-slate-200 px-4">
                     <TabsList className="border-b-0">

@@ -1,19 +1,11 @@
-import { createContext, useContext, useEffect, useMemo, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import {
   isThemeMode,
   resolveTheme,
   THEME_STORAGE_KEY,
-  type ResolvedTheme,
   type ThemeMode,
 } from "./theme"
-
-interface ThemeContextValue {
-  mode: ThemeMode
-  resolvedTheme: ResolvedTheme
-  setMode: (mode: ThemeMode) => void
-}
-
-const ThemeContext = createContext<ThemeContextValue | null>(null)
+import { ThemeContext } from "./theme-context"
 
 function readStoredTheme(): ThemeMode {
   if (typeof window === "undefined") return "system"
@@ -48,10 +40,4 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
 
   const value = useMemo(() => ({ mode, resolvedTheme, setMode }), [mode, resolvedTheme])
   return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>
-}
-
-export function useAppTheme() {
-  const context = useContext(ThemeContext)
-  if (!context) throw new Error("useAppTheme must be used within ThemeProvider")
-  return context
 }

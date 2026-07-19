@@ -1,6 +1,6 @@
 import { Button, Dropdown } from "@heroui/react"
 import { Check, Monitor, Moon, Sun } from "lucide-react"
-import { useAppTheme } from "@/theme/theme-provider"
+import { useAppTheme } from "@/theme/theme-context"
 import type { ThemeMode } from "@/theme/theme"
 
 const themeOptions: Array<{
