@@ -15,7 +15,7 @@ import {
 } from "lucide-react"
 import { toast, Toaster } from "sonner"
 import { recommendTreasures } from "@/domain/recommendations"
-import { parseJsonData, parseZxData, serializeJsonData } from "@/domain/serialization"
+import { parseJsonData, parseZxData, serializeJsonData, serializeZxData } from "@/domain/serialization"
 import { expandAttributeCombo } from "@/domain/attributes"
 import type { AttributeName, DropDataset, DropEntry, MatchMode } from "@/domain/types"
 import { useAppStore } from "@/store/app-store"
@@ -196,6 +196,20 @@ function CommandBar({ onOpenEditor }: { onOpenEditor: () => void }) {
     URL.revokeObjectURL(url)
     toast.success("JSON 数据已导出")
   }
+  const exportZx = () => {
+    const dataset = useAppStore.getState().dataset
+    const bytes = serializeZxData(dataset)
+    const copy = new Uint8Array(bytes.byteLength)
+    copy.set(bytes)
+    const blob = new Blob([copy.buffer], { type: "application/octet-stream" })
+    const url = URL.createObjectURL(blob)
+    const anchor = document.createElement("a")
+    anchor.href = url
+    anchor.download = "drop_tables.zx"
+    anchor.click()
+    URL.revokeObjectURL(url)
+    toast.success("旧版 .zx 数据已导出")
+  }
   return (
     <header className="flex h-16 items-center justify-between border-b border-slate-200 bg-white px-5">
       <div className="flex items-center gap-3">
@@ -212,6 +226,7 @@ function CommandBar({ onOpenEditor }: { onOpenEditor: () => void }) {
         <input ref={inputRef} type="file" accept=".json,.zx,application/json,application/octet-stream" className="hidden" onChange={(event) => void handleFile(event.target.files?.[0])} />
         <Button variant="outline" size="sm" onClick={() => inputRef.current?.click()}><FileUp />打开数据</Button>
         <Button variant="outline" size="sm" onClick={exportJson}><FileDown />导出 JSON</Button>
+        <Button variant="outline" size="sm" onClick={exportZx}><FileDown />导出 .zx</Button>
         <Button variant="outline" size="sm" onClick={onOpenEditor}><Database />数据编辑</Button>
         <Button variant="outline" size="sm" onClick={() => { clearFilters(); toast.success("筛选条件已清空") }}><RotateCcw />清空条件</Button>
         <TooltipProvider>
