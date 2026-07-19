@@ -27,6 +27,8 @@
   --app-bg: #f4f6f8;
   --app-surface: #ffffff;
   --app-surface-muted: #f7f9fb;
+  --app-control: #f1f3f5;
+  --app-control-hover: #e8ecef;
   --app-border: #e1e6eb;
   --app-text: #17202e;
   --app-text-muted: #667285;
@@ -59,6 +61,8 @@
   --app-bg: #101316;
   --app-surface: #181c20;
   --app-surface-muted: #20252a;
+  --app-control: #252a30;
+  --app-control-hover: #30363d;
   --app-border: #30373e;
   --app-text: #f1f4f6;
   --app-text-muted: #9aa5b1;
@@ -117,6 +121,35 @@ textarea:focus-visible,
 select:focus-visible {
   outline: 2px solid var(--ring);
   outline-offset: 2px;
+}
+
+.toolbar-command {
+  height: 34px !important;
+  border-radius: 7px !important;
+  padding-inline: 12px !important;
+  font-size: 12px !important;
+  font-weight: 500 !important;
+}
+
+.filter-option {
+  height: 34px !important;
+  border-radius: 6px !important;
+  border-color: transparent !important;
+  background: var(--app-control) !important;
+  color: var(--app-text) !important;
+  font-size: 12px !important;
+  font-weight: 500 !important;
+  box-shadow: none !important;
+}
+
+.filter-option:hover {
+  background: var(--app-control-hover) !important;
+}
+
+.filter-option[data-selected="true"] {
+  background: var(--app-accent) !important;
+  color: white !important;
+  box-shadow: 0 4px 10px color-mix(in srgb, var(--app-accent) 20%, transparent) !important;
 }
 
 @keyframes tab-enter {

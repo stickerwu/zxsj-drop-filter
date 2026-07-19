@@ -1,13 +1,6 @@
 import { useRef } from "react"
 import { Button, Tooltip } from "@heroui/react"
-import {
-  Clipboard,
-  Database,
-  FileDown,
-  FileUp,
-  RotateCcw,
-  Sparkles,
-} from "lucide-react"
+import { Clipboard, Database, FileDown, FileUp, RotateCcw } from "lucide-react"
 import { toast } from "sonner"
 import {
   parseJsonData,
@@ -70,13 +63,15 @@ export function AppToolbar({ onOpenEditor }: { onOpenEditor: () => void }) {
   }
 
   return (
-    <header className="flex h-16 shrink-0 items-center justify-between border-b border-[var(--app-border)] bg-[var(--app-surface)] px-5">
+    <header className="flex h-[72px] shrink-0 items-center justify-between border-b border-[var(--app-border)] bg-[var(--app-surface)] px-5">
       <div className="flex min-w-0 items-center gap-3">
-        <div className="flex size-9 shrink-0 items-center justify-center rounded-md bg-[var(--app-accent)] text-white shadow-sm">
-          <Sparkles className="size-4" />
-        </div>
+        <img
+          alt=""
+          className="size-10 shrink-0 rounded-lg object-cover shadow-sm"
+          src="/favicon.png"
+        />
         <div className="min-w-0">
-          <p className="truncate text-sm font-semibold text-[var(--app-text)]">
+          <p className="truncate text-[15px] font-semibold text-[var(--app-text)]">
             诛仙高手秘境掉落软件
           </p>
           <p className="truncate text-[11px] text-[var(--app-text-muted)]">
@@ -93,31 +88,32 @@ export function AppToolbar({ onOpenEditor }: { onOpenEditor: () => void }) {
           className="hidden"
           onChange={(event) => void handleFile(event.target.files?.[0])}
         />
-        <Button size="sm" variant="outline" onPress={() => inputRef.current?.click()}>
-          <FileUp className="size-3.5" />
+        <Button className="toolbar-command" size="sm" variant="outline" onPress={() => inputRef.current?.click()}>
+          <FileUp className="size-3.5 text-violet-600 dark:text-violet-300" />
           打开数据
         </Button>
-        <Button size="sm" variant="outline" onPress={exportJson}>
-          <FileDown className="size-3.5" />
+        <Button className="toolbar-command" size="sm" variant="outline" onPress={exportJson}>
+          <FileDown className="size-3.5 text-slate-600 dark:text-slate-300" />
           导出 JSON
         </Button>
-        <Button size="sm" variant="outline" onPress={exportZx}>
-          <FileDown className="size-3.5" />
+        <Button className="toolbar-command" size="sm" variant="outline" onPress={exportZx}>
+          <FileDown className="size-3.5 text-blue-600 dark:text-blue-300" />
           导出 .zx
         </Button>
-        <Button size="sm" variant="secondary" onPress={onOpenEditor}>
-          <Database className="size-3.5" />
+        <Button className="toolbar-command" size="sm" variant="secondary" onPress={onOpenEditor}>
+          <Database className="size-3.5 text-teal-700 dark:text-teal-300" />
           数据编辑
         </Button>
         <Button
+          className="toolbar-command"
           size="sm"
-          variant="ghost"
+          variant="outline"
           onPress={() => {
             clearFilters()
             toast.success("筛选条件已清空")
           }}
         >
-          <RotateCcw className="size-3.5" />
+          <RotateCcw className="size-3.5 text-violet-600 dark:text-violet-300" />
           清空条件
         </Button>
         <Tooltip>

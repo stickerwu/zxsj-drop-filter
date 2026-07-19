@@ -1,5 +1,5 @@
-import { Button, Chip, Radio, RadioGroup, Surface } from "@heroui/react"
-import { Info, Settings2 } from "lucide-react"
+import { Button, Chip, Radio, RadioGroup, Surface, Tooltip } from "@heroui/react"
+import { Info, RotateCcw, Settings2 } from "lucide-react"
 import {
   FILTER_ATTRIBUTES,
   type AttributeFilterName,
@@ -43,12 +43,15 @@ function FilterGroup({
       <div className={`grid ${gridClass} gap-1.5`}>
         {values.map((value) => {
           const isSelected = selected.includes(value)
+          const isFullRow = columns === 1
           return (
             <Button
               key={value}
-              className="h-8 min-w-0 px-2 text-xs"
+              className={`filter-option ${isFullRow ? "w-full justify-start px-3" : "min-w-0 justify-center px-2"}`}
+              data-layout={isFullRow ? "full-row" : "grid"}
+              data-selected={String(isSelected)}
               size="sm"
-              variant={isSelected ? "primary" : "secondary"}
+              variant="ghost"
               onPress={() => toggle(value)}
             >
               <span className="truncate">{value}</span>
@@ -95,21 +98,35 @@ export function FilterSidebar() {
   const filters = useAppStore((state) => state.filters)
   const dataset = useAppStore((state) => state.dataset)
   const setFilter = useAppStore((state) => state.setFilter)
+  const clearFilters = useAppStore((state) => state.clearFilters)
 
   return (
     <aside className="flex h-full min-w-0 flex-col bg-[var(--app-surface)]">
-      <div className="shrink-0 border-b border-[var(--app-border)] bg-[var(--app-surface-muted)] px-4 py-3.5">
-        <div className="flex items-center gap-2.5">
-          <div className="flex size-7 items-center justify-center rounded-md bg-[var(--app-accent-soft)] text-[var(--app-accent)]">
-            <Settings2 className="size-4" />
+      <div className="flex h-[68px] shrink-0 items-center justify-between border-b border-[var(--app-border)] bg-[var(--app-surface)] px-4">
+        <div className="flex min-w-0 items-center gap-2.5">
+          <div className="flex size-8 shrink-0 items-center justify-center rounded-md bg-[var(--app-accent-soft)] text-[var(--app-accent)]">
+            <Settings2 className="size-[17px]" />
           </div>
-          <div>
+          <div className="min-w-0">
             <h1 className="text-sm font-semibold text-[var(--app-text)]">筛选条件</h1>
-            <p className="mt-0.5 text-[11px] text-[var(--app-text-muted)]">
+            <p className="mt-0.5 truncate text-[11px] text-[var(--app-text-muted)]">
               留空表示不限，结果实时刷新
             </p>
           </div>
         </div>
+        <Tooltip>
+          <Button
+            aria-label="清空筛选"
+            className="shrink-0"
+            isIconOnly
+            size="sm"
+            variant="ghost"
+            onPress={clearFilters}
+          >
+            <RotateCcw className="size-3.5 text-[var(--app-text-muted)]" />
+          </Button>
+          <Tooltip.Content>清空筛选</Tooltip.Content>
+        </Tooltip>
       </div>
 
       <div className="min-h-0 flex-1 overflow-y-auto">
@@ -120,11 +137,11 @@ export function FilterSidebar() {
           onChange={(value) => setFilter("attributes", value as AttributeFilterName[])}
         />
 
-        <section className="border-b border-[var(--app-border)] px-4 py-3.5">
+        <section className="border-b border-[var(--app-border)] px-4 py-4">
           <h2 className="mb-2.5 text-xs font-semibold text-[var(--app-text)]">属性匹配</h2>
           <RadioGroup
             aria-label="属性匹配方式"
-            className="grid gap-2"
+            className="grid gap-2.5"
             value={filters.mode}
             onChange={(value) => setFilter("mode", value as MatchMode)}
           >
@@ -148,7 +165,7 @@ export function FilterSidebar() {
           columns={1}
         />
 
-        <div className="px-4 py-4">
+        <div className="px-4 py-5">
           <Surface className="rounded-md border border-[color-mix(in_srgb,var(--app-accent)_28%,transparent)] bg-[var(--app-accent-soft)] p-3">
             <div className="mb-1.5 flex items-center gap-1.5 text-xs font-semibold text-[var(--app-text)]">
               <Info className="size-3.5 text-[var(--app-accent)]" />

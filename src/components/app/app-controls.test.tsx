@@ -25,9 +25,16 @@ describe("app controls", () => {
     const user = userEvent.setup()
     render(<FilterSidebar />)
 
-    await user.click(screen.getByRole("button", { name: "会专" }))
+    const attributeButton = screen.getByRole("button", { name: "会专" })
+    expect(attributeButton).toHaveAttribute("data-selected", "false")
+    await user.click(attributeButton)
 
     expect(useAppStore.getState().filters.attributes).toEqual(["会专"])
+    expect(attributeButton).toHaveAttribute("data-selected", "true")
+    expect(screen.getByRole("button", { name: "护塔破冥幻" })).toHaveAttribute(
+      "data-layout",
+      "full-row",
+    )
   })
 
   it("summarizes the active conditions and result counts", () => {
