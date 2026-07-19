@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react"
 import { Chip } from "@heroui/react"
-import { GripVertical, Search } from "lucide-react"
+import { GripVertical, Search, Trophy } from "lucide-react"
 import {
   Panel,
   PanelGroup,
@@ -62,7 +62,7 @@ export function AppShell() {
       <div className="min-h-0 flex-1 p-3">
         <PanelGroup
           direction="horizontal"
-          className="h-full overflow-hidden rounded-lg border border-[var(--app-border)] bg-[var(--app-surface)] shadow-sm"
+          className="h-full overflow-hidden rounded-lg border border-[var(--app-border)] bg-[var(--app-surface)] shadow-[0_12px_36px_rgba(31,45,61,0.14),0_2px_8px_rgba(31,45,61,0.08)] dark:shadow-[0_16px_44px_rgba(0,0,0,0.38)]"
         >
           <Panel defaultSize={21} minSize={17}>
             <FilterSidebar />
@@ -80,14 +80,19 @@ export function AppShell() {
           <PanelDivider />
           <Panel defaultSize={24} minSize={20}>
             <aside className="flex h-full min-w-0 flex-col bg-[var(--app-surface)]">
-              <div className="flex h-16 shrink-0 items-center justify-between border-b border-[var(--app-border)] px-4">
-                <div className="min-w-0">
-                  <p className="text-[11px] font-semibold text-[var(--app-accent)]">
-                    推荐宝鉴
-                  </p>
-                  <p className="mt-0.5 truncate text-sm font-semibold text-[var(--app-text)]">
-                    {selected?.treasureName ?? "暂无结果"}
-                  </p>
+              <div className="flex h-[72px] shrink-0 items-center justify-between border-b border-[var(--app-border)] px-4">
+                <div className="flex min-w-0 items-center gap-3">
+                  <span className="flex size-9 shrink-0 items-center justify-center rounded-md bg-[var(--app-accent-soft)] text-[var(--app-accent)]">
+                    <Trophy className="size-[19px]" />
+                  </span>
+                  <div className="min-w-0">
+                    <p className="text-xs font-semibold text-[var(--app-accent)]">
+                      推荐宝鉴
+                    </p>
+                    <p className="mt-0.5 truncate text-[15px] font-semibold text-[var(--app-text)]">
+                      {selected?.treasureName ?? "暂无结果"}
+                    </p>
+                  </div>
                 </div>
                 {selected && (
                   <Chip className="shrink-0" size="sm" variant="primary">

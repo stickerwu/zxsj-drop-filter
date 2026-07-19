@@ -19,7 +19,13 @@ export function RecommendationTable({
     <div className="relative min-h-0 flex-1 overflow-hidden">
       <Table className="result-table h-full rounded-none border-0 shadow-none" variant="secondary">
         <Table.ScrollContainer className="h-full overflow-auto">
-          <Table.Content aria-label="推荐宝鉴列表" className="min-w-[920px]" data-density="reference">
+          <Table.Content
+            aria-label="推荐宝鉴列表"
+            className="min-w-[800px]"
+            data-density="reference"
+            data-header-corners="square"
+            onRowAction={(key) => selectRecommendation(String(key))}
+          >
             <Table.Header className="result-table-header sticky top-0 z-10">
               <Table.Column className="w-14 text-center" data-readable-header="true">排名</Table.Column>
               <Table.Column data-readable-header="true" isRowHeader>宝鉴</Table.Column>
@@ -41,7 +47,6 @@ export function RecommendationTable({
                       ? "result-table-row cursor-pointer bg-[var(--app-accent-soft)]"
                       : "result-table-row cursor-pointer"
                   }
-                  onClick={() => selectRecommendation(item.id)}
                 >
                   <Table.Cell className="text-center font-mono text-xs text-[var(--app-text-muted)]">
                     {index + 1}

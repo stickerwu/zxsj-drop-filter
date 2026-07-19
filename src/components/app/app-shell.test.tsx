@@ -16,5 +16,9 @@ describe("app shell", () => {
     expect(screen.getByText("诛仙高手秘境掉落软件")).toBeInTheDocument()
     expect(screen.getByRole("tab", { name: /推荐宝鉴/ })).toBeInTheDocument()
     expect(screen.getByText(/本地计算/)).toBeInTheDocument()
+    expect(screen.getByRole("button", { name: "数据编辑" })).toHaveAttribute(
+      "data-shadow",
+      "none",
+    )
   })
 })

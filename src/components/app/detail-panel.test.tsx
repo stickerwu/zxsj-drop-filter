@@ -17,14 +17,17 @@ describe("detail panel", () => {
 
     const { container } = render(<DetailPanel recommendation={recommendation} />)
 
-    expect(screen.getByText(recommendation.treasureName)).toBeInTheDocument()
+    expect(screen.queryByText(recommendation.treasureName)).not.toBeInTheDocument()
     expect(screen.getAllByText(recommendation.bestDungeonName).length).toBeGreaterThan(0)
     expect(screen.getByText("全部命中装备")).toBeInTheDocument()
     expect(screen.getByText("各副本表现")).toBeInTheDocument()
-    expect(
-      container.querySelector(
-        `[data-slot-visual="${recommendation.bestMatch.matchedEntries[0].slot}"]`,
-      ),
-    ).toBeInTheDocument()
+    const slotVisual = container.querySelector(
+      `[data-slot-visual="${recommendation.bestMatch.matchedEntries[0].slot}"]`,
+    )
+    expect(slotVisual).toBeInTheDocument()
+    expect(slotVisual?.closest("[data-detail-entry]")).toHaveAttribute(
+      "data-detail-density",
+      "compact",
+    )
   })
 })

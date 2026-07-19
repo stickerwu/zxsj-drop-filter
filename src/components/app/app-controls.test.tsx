@@ -31,10 +31,13 @@ describe("app controls", () => {
 
     expect(useAppStore.getState().filters.attributes).toEqual(["会专"])
     expect(attributeButton).toHaveAttribute("data-selected", "true")
-    expect(screen.getByRole("button", { name: "护塔破冥幻" })).toHaveAttribute(
+    const dungeonButton = screen.getByRole("button", { name: "护塔破冥幻" })
+    expect(dungeonButton).toHaveAttribute(
       "data-layout",
       "full-row",
     )
+    expect(dungeonButton).toHaveAttribute("data-text-align", "center")
+    expect(dungeonButton).toHaveAttribute("data-text-size", "14")
   })
 
   it("summarizes the active conditions and result counts", () => {

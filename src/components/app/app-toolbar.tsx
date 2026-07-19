@@ -100,7 +100,13 @@ export function AppToolbar({ onOpenEditor }: { onOpenEditor: () => void }) {
           <FileDown className="size-3.5 text-blue-600 dark:text-blue-300" />
           导出 .zx
         </Button>
-        <Button className="toolbar-command" size="sm" variant="secondary" onPress={onOpenEditor}>
+        <Button
+          className="toolbar-command toolbar-editor-command"
+          data-shadow="none"
+          size="sm"
+          variant="secondary"
+          onPress={onOpenEditor}
+        >
           <Database className="size-3.5 text-teal-700 dark:text-teal-300" />
           数据编辑
         </Button>

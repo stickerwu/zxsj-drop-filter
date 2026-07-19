@@ -52,13 +52,18 @@ describe("drop editor modal", () => {
 
     expect(dialog).toHaveClass("h-[720px]")
     expect(dialog).toHaveClass("max-h-[calc(100vh-2rem)]")
-    expect(header).toHaveClass("h-[88px]")
+    expect(header).toHaveClass("h-[72px]")
     expect(titleGroup).toHaveClass("justify-center")
     expect(within(titleGroup).getByText("掉落表编辑器")).toHaveClass("text-lg")
     expect(controlsSurface).toHaveClass("shadow-sm")
     expect(entriesSurface).toHaveClass("shadow-sm")
     expect(controlsSurface).not.toHaveClass("border-r")
+    expect(footer).toHaveClass("h-[60px]")
     expect(footer).not.toHaveClass("border-t")
+    expect(screen.getByRole("button", { name: /保存并应用/ })).toHaveAttribute(
+      "data-button-tone",
+      "strong",
+    )
   })
 
   it("keeps drop rows compact and single-line inside the entries surface", () => {
@@ -71,5 +76,13 @@ describe("drop editor modal", () => {
     expect(firstRow).toHaveClass("h-[46px]")
     expect(firstRow).toHaveClass("shadow-sm")
     expect(firstRow).not.toHaveClass("border")
+    expect(within(firstRow).getByTestId("verified-control")).toHaveAttribute(
+      "data-control-tone",
+      "strong",
+    )
+    expect(within(firstRow).getByRole("button", { name: "删除掉落行" })).toHaveAttribute(
+      "data-button-tone",
+      "strong",
+    )
   })
 })

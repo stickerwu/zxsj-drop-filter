@@ -161,7 +161,7 @@ export function DropEditorModal({
             data-editor-layout="reference"
           >
             <Modal.Header
-              className="relative flex h-[88px] shrink-0 items-center justify-center px-6 py-0"
+              className="relative flex h-[72px] shrink-0 items-center justify-center px-6 py-0"
               data-testid="drop-editor-header"
             >
               <div
@@ -175,7 +175,7 @@ export function DropEditorModal({
                   <Modal.Heading className="text-lg font-semibold">
                     掉落表编辑器
                   </Modal.Heading>
-                  <p className="mt-2 truncate text-xs text-[var(--app-text-muted)]">
+                  <p className="mt-1 truncate text-xs text-[var(--app-text-muted)]">
                     维护副本、宝鉴和部位 / 属性 / 权重，保存前请确认权重为正数。
                   </p>
                 </div>
@@ -306,7 +306,11 @@ export function DropEditorModal({
                           }
                         >
                           <Checkbox.Content className="flex size-8 items-center justify-center">
-                            <Checkbox.Control className="editor-verified-control">
+                            <Checkbox.Control
+                              className="editor-verified-control"
+                              data-control-tone="strong"
+                              data-testid="verified-control"
+                            >
                               <Checkbox.Indicator>
                                 <Check className="size-3" />
                               </Checkbox.Indicator>
@@ -315,10 +319,11 @@ export function DropEditorModal({
                         </Checkbox>
                         <Button
                           aria-label="删除掉落行"
-                          className="size-8 min-w-8 rounded-md"
+                          className="editor-delete-button size-8 min-w-8 rounded-md"
+                          data-button-tone="strong"
                           isIconOnly
                           size="sm"
-                          variant="danger-soft"
+                          variant="ghost"
                           onPress={() =>
                             setEntries((current) =>
                               current.filter((item) => item.id !== entry.id),
@@ -335,7 +340,7 @@ export function DropEditorModal({
             </Modal.Body>
 
             <Modal.Footer
-              className="flex h-[72px] shrink-0 items-center bg-[var(--app-surface-muted)] px-6 py-0 shadow-[0_-4px_16px_rgba(15,23,42,0.04)]"
+              className="flex h-[60px] shrink-0 items-center bg-[var(--app-surface-muted)] px-6 py-0 shadow-[0_-4px_16px_rgba(15,23,42,0.04)]"
               data-testid="drop-editor-footer"
             >
               <div className="mr-auto min-h-5 text-xs text-red-600">
@@ -345,7 +350,8 @@ export function DropEditorModal({
                 取消
               </Button>
               <Button
-                className="h-10 rounded-md px-5"
+                className="editor-save-button h-9 rounded-md px-5"
+                data-button-tone="strong"
                 isDisabled={hasInvalidWeight}
                 size="sm"
                 variant="primary"

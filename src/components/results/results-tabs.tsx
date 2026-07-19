@@ -39,15 +39,20 @@ export function ResultsTabs({
       variant="secondary"
       onSelectionChange={(key) => setResultTab(String(key) as ResultTab)}
     >
-      <Tabs.ListContainer className="shrink-0 border-b border-[var(--app-border)] bg-[var(--app-surface)] px-4">
-        <Tabs.List aria-label="掉落结果" className="gap-5">
-          <Tabs.Tab id="recommendations" className="h-12 gap-1.5 px-0 text-xs">
+      <Tabs.ListContainer className="shrink-0 border-b border-[var(--app-border)] bg-[var(--app-surface)] px-0">
+        <Tabs.List
+          aria-label="掉落结果"
+          className="grid w-full grid-cols-3 gap-0"
+          data-layout="full-width"
+          data-results-tab-list
+        >
+          <Tabs.Tab id="recommendations" className="h-12 w-full justify-center gap-2 px-3 text-[13px]">
             <TabLabel icon={Sparkles}>推荐宝鉴</TabLabel>
           </Tabs.Tab>
-          <Tabs.Tab id="dungeon-details" className="h-12 gap-1.5 px-0 text-xs">
+          <Tabs.Tab id="dungeon-details" className="h-12 w-full justify-center gap-2 px-3 text-[13px]">
             <TabLabel icon={Database}>副本 × 宝鉴明细</TabLabel>
           </Tabs.Tab>
-          <Tabs.Tab id="hit-items" className="h-12 gap-1.5 px-0 text-xs">
+          <Tabs.Tab id="hit-items" className="h-12 w-full justify-center gap-2 px-3 text-[13px]">
             <TabLabel icon={CheckCircle2}>命中装备列表</TabLabel>
           </Tabs.Tab>
         </Tabs.List>

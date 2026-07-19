@@ -1,4 +1,4 @@
-import { Button, Card, Chip } from "@heroui/react"
+import { Button, Chip } from "@heroui/react"
 import {
   Badge,
   BadgeCheck,
@@ -16,7 +16,6 @@ import {
   Shirt,
   Sparkles,
   Target,
-  Trophy,
   Watch,
   type LucideIcon,
 } from "lucide-react"
@@ -80,98 +79,82 @@ export function DetailPanel({
 
   return (
     <div className="h-full overflow-y-auto">
-      <div className="space-y-4 p-4">
-        <div>
-          <div className="flex items-center gap-2">
-            <span className="flex size-8 items-center justify-center rounded-md bg-[var(--app-accent-soft)] text-[var(--app-accent)]">
-              <Trophy className="size-4" />
-            </span>
-            <h2 className="truncate text-[15px] font-semibold text-[var(--app-text)]">
-              {recommendation.treasureName}
-            </h2>
-          </div>
-          <div className="mt-2 flex items-center gap-1.5 pl-10 text-[11px] text-[var(--app-text-muted)]">
-            <span className="truncate">{recommendation.bestDungeonName}</span>
-            <span aria-hidden="true">·</span>
-            <span className="shrink-0">
-              最佳概率 {formatPercent(recommendation.bestProbability)}
-            </span>
-          </div>
+      <div className="space-y-3.5 p-4">
+        <div className="flex items-center justify-between gap-3 text-xs text-[var(--app-text-muted)]">
+          <span className="truncate">{recommendation.bestDungeonName}</span>
+          <span className="shrink-0 font-medium text-[var(--app-accent)]">
+            最佳概率 {formatPercent(recommendation.bestProbability)}
+          </span>
         </div>
-
         <div className="grid grid-cols-2 gap-2">
-          <Card className="rounded-md border border-[var(--app-border)] bg-[var(--app-surface-muted)] shadow-none">
-            <Card.Content className="p-3.5">
-              <div className="flex items-center gap-2 text-[11px] text-[var(--app-text-muted)]">
-                <Target className="size-3.5 text-[var(--app-accent)]" />
+          <div className="rounded-md bg-[var(--app-surface-muted)] p-3.5 shadow-[inset_0_0_0_1px_var(--app-border),0_4px_12px_rgba(31,45,61,0.05)]">
+              <div className="flex items-center gap-2 text-xs text-[var(--app-text-muted)]">
+                <Target className="size-4 text-[var(--app-accent)]" />
                 命中概率
               </div>
               <p className="mt-2 text-xl font-semibold text-[var(--app-accent)]">
                 {formatPercent(recommendation.bestMatch.probability)}
               </p>
-            </Card.Content>
-          </Card>
-          <Card className="rounded-md border border-[var(--app-border)] bg-[var(--app-surface-muted)] shadow-none">
-            <Card.Content className="p-3.5">
-              <div className="flex items-center gap-2 text-[11px] text-[var(--app-text-muted)]">
-                <Gauge className="size-3.5 text-blue-600 dark:text-blue-300" />
+          </div>
+          <div className="rounded-md bg-[var(--app-surface-muted)] p-3.5 shadow-[inset_0_0_0_1px_var(--app-border),0_4px_12px_rgba(31,45,61,0.05)]">
+              <div className="flex items-center gap-2 text-xs text-[var(--app-text-muted)]">
+                <Gauge className="size-4 text-blue-600 dark:text-blue-300" />
                 期望次数
               </div>
               <p className="mt-2 text-xl font-semibold text-[var(--app-text)]">
                 {formatExpected(recommendation.bestMatch.expectedRuns)}
               </p>
-            </Card.Content>
-          </Card>
+          </div>
         </div>
 
         <section>
-          <div className="mb-2 flex h-6 items-center justify-between">
-            <h3 className="text-xs font-semibold text-[var(--app-text)]">全部命中装备</h3>
+          <div className="mb-2 flex h-7 items-center justify-between">
+            <h3 className="text-[13px] font-semibold text-[var(--app-text)]">全部命中装备</h3>
             <Chip size="sm" variant="soft">
               {recommendation.bestMatch.matchedEntries.length}
             </Chip>
           </div>
-          <div className="space-y-2">
+          <div className="space-y-1.5">
             {recommendation.bestMatch.matchedEntries.map((entry) => {
               const visual = slotVisuals[entry.slot] ?? fallbackSlotVisual
               const EntryIcon = visual.icon
               return (
-                <Card
+                <div
                   key={entry.id}
-                  className="rounded-md border border-[var(--app-border)] bg-[var(--app-surface)] shadow-sm"
+                  className="flex h-14 items-center gap-2.5 rounded-md bg-[var(--app-surface)] px-2.5 shadow-[0_3px_10px_rgba(31,45,61,0.10),inset_0_0_0_1px_var(--app-border)] transition-[box-shadow,transform] duration-150 hover:-translate-y-px hover:shadow-[0_6px_16px_rgba(31,45,61,0.14),inset_0_0_0_1px_var(--app-border)] dark:shadow-[0_4px_12px_rgba(0,0,0,0.28),inset_0_0_0_1px_var(--app-border)]"
+                  data-detail-density="compact"
+                  data-detail-entry
                 >
-                  <Card.Content className="flex min-h-[58px] items-center gap-3 p-3">
-                    <div
-                      className={`flex size-9 shrink-0 items-center justify-center rounded-md ${visual.className}`}
-                      data-slot-visual={entry.slot}
-                    >
-                      <EntryIcon className="size-[17px]" />
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <p className="truncate text-xs font-semibold text-[var(--app-text)]">
-                        {entry.slot} · {entry.attributeCombo}
-                      </p>
-                      <p className="mt-1 truncate text-[11px] text-[var(--app-text-muted)]">
-                        展开属性：{entry.expandedAttributes.join(" + ")}
-                      </p>
-                    </div>
-                    <Chip className="shrink-0" size="sm" variant="secondary">
-                      权重 {entry.weight}
-                    </Chip>
-                  </Card.Content>
-                </Card>
+                  <div
+                    className={`flex size-10 shrink-0 items-center justify-center rounded-md ${visual.className}`}
+                    data-slot-visual={entry.slot}
+                  >
+                    <EntryIcon className="size-5" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-[13px] font-semibold text-[var(--app-text)]">
+                      {entry.slot} · {entry.attributeCombo}
+                    </p>
+                    <p className="mt-0.5 truncate text-xs text-[var(--app-text-muted)]">
+                      展开属性：{entry.expandedAttributes.join(" + ")}
+                    </p>
+                  </div>
+                  <Chip className="shrink-0" size="sm" variant="secondary">
+                    权重 {entry.weight}
+                  </Chip>
+                </div>
               )
             })}
           </div>
         </section>
 
         <section>
-          <h3 className="mb-2 text-xs font-semibold text-[var(--app-text)]">各副本表现</h3>
+          <h3 className="mb-2 text-[13px] font-semibold text-[var(--app-text)]">各副本表现</h3>
           <div className="space-y-1.5">
             {recommendation.dungeonDetails.map((detail) => (
               <div
                 key={detail.dungeonId}
-                className="flex items-center justify-between rounded-md border border-[var(--app-border)] bg-[var(--app-surface)] px-3 py-2 text-xs"
+                className="flex h-9 items-center justify-between rounded-md bg-[var(--app-surface)] px-3 text-xs shadow-[inset_0_0_0_1px_var(--app-border)]"
               >
                 <span className="truncate pr-2 text-[var(--app-text-muted)]">
                   {detail.dungeonName}

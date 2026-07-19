@@ -31,25 +31,27 @@ function FilterGroup({
   }
 
   return (
-    <section className="border-b border-[var(--app-border)] px-4 py-3.5">
-      <div className="mb-2.5 flex h-5 items-center justify-between">
-        <h2 className="text-xs font-semibold text-[var(--app-text)]">{title}</h2>
+    <section className="border-b border-[var(--app-border)] px-4 py-3">
+      <div className="mb-2 flex h-5 items-center justify-between">
+        <h2 className="text-[13px] font-semibold text-[var(--app-text)]">{title}</h2>
         {selected.length > 0 && (
           <Chip size="sm" variant="soft">
             {selected.length}
           </Chip>
         )}
       </div>
-      <div className={`grid ${gridClass} gap-1.5`}>
+      <div className={`grid ${gridClass} gap-1`}>
         {values.map((value) => {
           const isSelected = selected.includes(value)
           const isFullRow = columns === 1
           return (
             <Button
               key={value}
-              className={`filter-option ${isFullRow ? "w-full justify-start px-3" : "min-w-0 justify-center px-2"}`}
+              className={`filter-option w-full min-w-0 justify-center ${isFullRow ? "dungeon-filter-option px-3" : "px-2"}`}
               data-layout={isFullRow ? "full-row" : "grid"}
               data-selected={String(isSelected)}
+              data-text-align={isFullRow ? "center" : "center"}
+              data-text-size={isFullRow ? "14" : "13"}
               size="sm"
               variant="ghost"
               onPress={() => toggle(value)}
@@ -59,7 +61,7 @@ function FilterGroup({
           )
         })}
       </div>
-      <div className="mt-2 flex gap-1">
+      <div className="mt-1.5 flex gap-1">
         <Button
           className="h-7 px-2 text-[11px]"
           size="sm"
@@ -102,14 +104,14 @@ export function FilterSidebar() {
 
   return (
     <aside className="flex h-full min-w-0 flex-col bg-[var(--app-surface)]">
-      <div className="flex h-[68px] shrink-0 items-center justify-between border-b border-[var(--app-border)] bg-[var(--app-surface)] px-4">
+      <div className="flex h-[72px] shrink-0 items-center justify-between border-b border-[var(--app-border)] bg-[var(--app-surface)] px-4">
         <div className="flex min-w-0 items-center gap-2.5">
-          <div className="flex size-8 shrink-0 items-center justify-center rounded-md bg-[var(--app-accent-soft)] text-[var(--app-accent)]">
-            <Settings2 className="size-[17px]" />
+          <div className="flex size-9 shrink-0 items-center justify-center rounded-md bg-[var(--app-accent-soft)] text-[var(--app-accent)]">
+            <Settings2 className="size-[19px]" />
           </div>
           <div className="min-w-0">
-            <h1 className="text-sm font-semibold text-[var(--app-text)]">筛选条件</h1>
-            <p className="mt-0.5 truncate text-[11px] text-[var(--app-text-muted)]">
+            <h1 className="text-[15px] font-semibold text-[var(--app-text)]">筛选条件</h1>
+            <p className="mt-0.5 truncate text-xs text-[var(--app-text-muted)]">
               留空表示不限，结果实时刷新
             </p>
           </div>
@@ -137,11 +139,11 @@ export function FilterSidebar() {
           onChange={(value) => setFilter("attributes", value as AttributeFilterName[])}
         />
 
-        <section className="border-b border-[var(--app-border)] px-4 py-4">
-          <h2 className="mb-2.5 text-xs font-semibold text-[var(--app-text)]">属性匹配</h2>
+        <section className="border-b border-[var(--app-border)] px-4 py-3">
+          <h2 className="mb-2 text-[13px] font-semibold text-[var(--app-text)]">属性匹配</h2>
           <RadioGroup
             aria-label="属性匹配方式"
-            className="grid gap-2.5"
+            className="grid gap-2"
             value={filters.mode}
             onChange={(value) => setFilter("mode", value as MatchMode)}
           >

@@ -30,12 +30,27 @@ export function DungeonDetailTable({
         || right.detail.matchedRowCount - left.detail.matchedRowCount
         || left.detail.dungeonName.localeCompare(right.detail.dungeonName, "zh-CN"),
     )
+  const recommendationByRowId = new Map(
+    rows.map((row) => [
+      `${row.recommendationId}-${row.detail.dungeonId}`,
+      row.recommendationId,
+    ]),
+  )
 
   return (
     <div className="relative min-h-0 flex-1 overflow-hidden">
       <Table className="result-table h-full rounded-none border-0 shadow-none" variant="secondary">
         <Table.ScrollContainer className="h-full overflow-auto">
-          <Table.Content aria-label="副本宝鉴明细" className="min-w-[900px]" data-density="reference">
+          <Table.Content
+            aria-label="副本宝鉴明细"
+            className="min-w-[780px]"
+            data-density="reference"
+            data-header-corners="square"
+            onRowAction={(key) => {
+              const recommendationId = recommendationByRowId.get(String(key))
+              if (recommendationId) selectRecommendation(recommendationId)
+            }}
+          >
             <Table.Header className="result-table-header sticky top-0 z-10">
               <Table.Column className="w-14 text-center" data-readable-header="true">排名</Table.Column>
               <Table.Column data-readable-header="true" isRowHeader>副本</Table.Column>
@@ -51,7 +66,6 @@ export function DungeonDetailTable({
                   key={`${row.recommendationId}-${row.detail.dungeonId}`}
                   id={`${row.recommendationId}-${row.detail.dungeonId}`}
                   className="result-table-row cursor-pointer"
-                  onClick={() => selectRecommendation(row.recommendationId)}
                 >
                   <Table.Cell className="text-center font-mono text-xs text-[var(--app-text-muted)]">
                     {index + 1}
