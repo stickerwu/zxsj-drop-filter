@@ -15,11 +15,16 @@ describe("detail panel", () => {
       dungeons: [],
     })[0]
 
-    render(<DetailPanel recommendation={recommendation} />)
+    const { container } = render(<DetailPanel recommendation={recommendation} />)
 
     expect(screen.getByText(recommendation.treasureName)).toBeInTheDocument()
     expect(screen.getAllByText(recommendation.bestDungeonName).length).toBeGreaterThan(0)
     expect(screen.getByText("全部命中装备")).toBeInTheDocument()
     expect(screen.getByText("各副本表现")).toBeInTheDocument()
+    expect(
+      container.querySelector(
+        `[data-slot-visual="${recommendation.bestMatch.matchedEntries[0].slot}"]`,
+      ),
+    ).toBeInTheDocument()
   })
 })
