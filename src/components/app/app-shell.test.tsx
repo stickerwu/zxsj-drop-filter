@@ -1,10 +1,34 @@
-import { cleanup, render, screen } from "@testing-library/react"
-import { afterEach, describe, expect, it } from "vitest"
+import {
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+  within,
+} from "@testing-library/react"
+import userEvent from "@testing-library/user-event"
+import { afterEach, beforeEach, describe, expect, it } from "vitest"
+import { demoDataset } from "@/data/demo-data"
+import { useAppStore } from "@/store/app-store"
 import { ThemeProvider } from "@/theme/theme-provider"
 import { AppShell } from "./app-shell"
 
 describe("app shell", () => {
   afterEach(cleanup)
+
+  beforeEach(() => {
+    useAppStore.setState({
+      dataset: demoDataset,
+      filters: {
+        attributes: [],
+        mode: "any",
+        slots: [],
+        dungeons: [],
+      },
+      selectedRecommendationId: null,
+      activeResultTab: "recommendations",
+    })
+  })
 
   it("renders the complete desktop workbench", () => {
     render(
@@ -24,5 +48,60 @@ describe("app shell", () => {
       "tagName",
       "BUTTON",
     )
+  })
+
+  it("discards editor drafts after closing and reloads replaced data", async () => {
+    const user = userEvent.setup()
+    render(
+      <ThemeProvider>
+        <AppShell />
+      </ThemeProvider>,
+    )
+
+    fireEvent.click(screen.getByRole("button", { name: "数据编辑" }))
+    await screen.findByTestId("drop-entry-row-0")
+    const originalExpandedValue = (
+      within(screen.getByTestId("drop-entry-row-0")).getByRole("textbox", {
+        name: "展开属性",
+      }) as HTMLInputElement
+    ).value
+    fireEvent.click(
+      within(screen.getByTestId("drop-entry-row-0")).getByRole("button", {
+        name: /属性$/,
+      }),
+    )
+    await user.click(await screen.findByRole("option", { name: "会专" }))
+    fireEvent.click(screen.getByRole("button", { name: "取消" }))
+    await waitFor(() => {
+      expect(screen.queryByRole("dialog", { name: "掉落表编辑器" })).not.toBeInTheDocument()
+    })
+    fireEvent.click(screen.getByRole("button", { name: "数据编辑" }))
+    await screen.findByTestId("drop-entry-row-0")
+
+    expect(
+      within(screen.getByTestId("drop-entry-row-0")).getByDisplayValue(
+        originalExpandedValue,
+      ),
+    ).toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole("button", { name: "取消" }))
+    await waitFor(() => {
+      expect(screen.queryByRole("dialog", { name: "掉落表编辑器" })).not.toBeInTheDocument()
+    })
+    const replacement = structuredClone(demoDataset)
+    replacement.dungeons[0].treasures[0].entries[0] = {
+      ...replacement.dungeons[0].treasures[0].entries[0],
+      attributeCombo: "专精",
+      expandedAttributes: ["专精"],
+    }
+    useAppStore.setState({ dataset: replacement })
+    fireEvent.click(screen.getByRole("button", { name: "数据编辑" }))
+    await screen.findByTestId("drop-entry-row-0")
+
+    expect(
+      within(screen.getByTestId("drop-entry-row-0")).getByRole("textbox", {
+        name: "展开属性",
+      }),
+    ).toHaveValue("专精")
   })
 })

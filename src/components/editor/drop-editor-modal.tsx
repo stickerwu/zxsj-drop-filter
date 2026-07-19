@@ -310,6 +310,9 @@ export function DropEditorModal({
                               className="editor-verified-control"
                               data-control-tone="strong"
                               data-testid="verified-control"
+                              data-verification-state={
+                                entry.verified ? "verified" : "unverified"
+                              }
                             >
                               <Checkbox.Indicator>
                                 <Check className="size-3" />

@@ -118,7 +118,9 @@ export function AppShell() {
         </span>
       </footer>
 
-      <DropEditorModal open={editorOpen} onOpenChange={setEditorOpen} />
+      {editorOpen && (
+        <DropEditorModal open onOpenChange={setEditorOpen} />
+      )}
       <Toaster position="bottom-right" richColors theme={resolvedTheme} />
     </div>
   )

@@ -1,10 +1,16 @@
 import { cleanup, render, screen, within } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
-import { afterEach, describe, expect, it } from "vitest"
+import { afterEach, beforeEach, describe, expect, it } from "vitest"
+import { demoDataset } from "@/data/demo-data"
+import { useAppStore } from "@/store/app-store"
 import { DropEditorModal } from "./drop-editor-modal"
 
 describe("drop editor modal", () => {
   afterEach(cleanup)
+
+  beforeEach(() => {
+    useAppStore.setState({ dataset: demoDataset })
+  })
 
   it("switches dungeon and attribute with select controls", async () => {
     const user = userEvent.setup()
@@ -80,9 +86,34 @@ describe("drop editor modal", () => {
       "data-control-tone",
       "strong",
     )
+    expect(within(firstRow).getByTestId("verified-control")).toHaveAttribute(
+      "data-verification-state",
+      "verified",
+    )
+    expect(
+      within(firstRow)
+        .getByTestId("verified-control")
+        .closest('[data-slot="checkbox"]'),
+    ).toHaveAttribute(
+      "data-selected",
+      "true",
+    )
     expect(within(firstRow).getByRole("button", { name: "删除掉落行" })).toHaveAttribute(
       "data-button-tone",
       "strong",
+    )
+  })
+
+  it("exposes a distinct unverified confirmation state", async () => {
+    const user = userEvent.setup()
+    render(<DropEditorModal open onOpenChange={() => undefined} />)
+
+    const firstRow = screen.getByTestId("drop-entry-row-0")
+    await user.click(within(firstRow).getByRole("checkbox", { name: "已核对" }))
+
+    expect(within(firstRow).getByTestId("verified-control")).toHaveAttribute(
+      "data-verification-state",
+      "unverified",
     )
   })
 })

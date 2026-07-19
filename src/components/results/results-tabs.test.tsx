@@ -4,6 +4,8 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest"
 import { demoDataset } from "@/data/demo-data"
 import { recommendTreasures } from "@/domain/recommendations"
 import { useAppStore } from "@/store/app-store"
+import { DungeonDetailTable } from "./dungeon-detail-table"
+import { HitItemTable } from "./hit-item-table"
 import { ResultsTabs } from "./results-tabs"
 
 describe("results tabs", () => {
@@ -61,6 +63,46 @@ describe("results tabs", () => {
     await user.click(
       screen.getByRole("row", { name: new RegExp(recommendations[1].treasureName) }),
     )
+
+    expect(useAppStore.getState().selectedRecommendationId).toBe(recommendations[1].id)
+  })
+
+  it("selects a recommendation from the dungeon detail table", async () => {
+    const user = userEvent.setup()
+    const recommendations = recommendTreasures(demoDataset, {
+      attributes: [],
+      mode: "any",
+      slots: [],
+      dungeons: [],
+    })
+
+    render(<DungeonDetailTable recommendations={recommendations} />)
+
+    const row = screen
+      .getAllByRole("gridcell", { name: recommendations[1].treasureName })[0]
+      .closest('[role="row"]')
+    expect(row).toBeInTheDocument()
+    await user.click(row!)
+
+    expect(useAppStore.getState().selectedRecommendationId).toBe(recommendations[1].id)
+  })
+
+  it("selects a recommendation from the hit item table", async () => {
+    const user = userEvent.setup()
+    const recommendations = recommendTreasures(demoDataset, {
+      attributes: [],
+      mode: "any",
+      slots: [],
+      dungeons: [],
+    })
+
+    render(<HitItemTable recommendations={recommendations} />)
+
+    const row = screen
+      .getAllByRole("gridcell", { name: recommendations[1].treasureName })[0]
+      .closest('[role="row"]')
+    expect(row).toBeInTheDocument()
+    await user.click(row!)
 
     expect(useAppStore.getState().selectedRecommendationId).toBe(recommendations[1].id)
   })
