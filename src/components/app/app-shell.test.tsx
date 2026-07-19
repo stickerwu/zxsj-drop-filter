@@ -20,5 +20,9 @@ describe("app shell", () => {
       "data-shadow",
       "none",
     )
+    expect(screen.getByRole("button", { name: "切换主题" }).parentElement).not.toHaveProperty(
+      "tagName",
+      "BUTTON",
+    )
   })
 })

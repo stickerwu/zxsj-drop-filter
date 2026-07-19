@@ -1,4 +1,4 @@
-import { Button, Dropdown } from "@heroui/react"
+import { Dropdown } from "@heroui/react"
 import { Check, Monitor, Moon, Sun } from "lucide-react"
 import { useAppTheme } from "@/theme/theme-context"
 import type { ThemeMode } from "@/theme/theme"
@@ -19,10 +19,11 @@ export function ThemeMenu() {
 
   return (
     <Dropdown>
-      <Dropdown.Trigger>
-        <Button aria-label="切换主题" isIconOnly size="sm" variant="ghost">
-          <ActiveIcon className="size-4" />
-        </Button>
+      <Dropdown.Trigger
+        aria-label="切换主题"
+        className="flex size-8 items-center justify-center rounded-md text-[var(--app-text)] outline-none transition-colors hover:bg-[var(--app-control)] focus-visible:ring-2 focus-visible:ring-[var(--ring)]"
+      >
+        <ActiveIcon className="size-4" />
       </Dropdown.Trigger>
       <Dropdown.Popover placement="bottom end">
         <Dropdown.Menu
