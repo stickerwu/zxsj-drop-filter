@@ -1,6 +1,9 @@
-import { expandAttributeCombo } from "./attributes"
 import {
-  BASE_ATTRIBUTES,
+  isFilterAttribute,
+  normalizeExpandedAttributes,
+} from "./attributes"
+import {
+  FILTER_ATTRIBUTES,
   type DropDataset,
   type LegacyDataset,
   type RawDataset,
@@ -11,6 +14,11 @@ export { expandAttributeCombo } from "./attributes"
 function stableId(prefix: string, value: string, index: number): string {
   const slug = value.trim().toLowerCase().replaceAll(/[^\p{L}\p{N}]+/gu, "-").replace(/^-|-$/g, "")
   return `${prefix}-${slug || "item"}-${index + 1}`
+}
+
+function normalizeAttributeCatalog(attributes?: string[]) {
+  const normalized = [...new Set((attributes ?? []).filter(isFilterAttribute))]
+  return normalized.length ? normalized : [...FILTER_ATTRIBUTES]
 }
 
 export function normalizeDataset(input: RawDataset): DropDataset {
@@ -25,9 +33,7 @@ export function normalizeDataset(input: RawDataset): DropDataset {
         name: rawEntry.name,
         slot: rawEntry.slot,
         attributeCombo: rawEntry.attributeCombo,
-        expandedAttributes: (rawEntry.expandedAttributes?.filter((attribute): attribute is typeof BASE_ATTRIBUTES[number] =>
-          BASE_ATTRIBUTES.includes(attribute as typeof BASE_ATTRIBUTES[number]),
-        ) ?? expandAttributeCombo(rawEntry.attributeCombo)),
+        expandedAttributes: normalizeExpandedAttributes(rawEntry.expandedAttributes, rawEntry.attributeCombo),
         weight: rawEntry.weight,
         verified: rawEntry.verified ?? false,
         quality: rawEntry.quality,
@@ -43,7 +49,7 @@ export function normalizeDataset(input: RawDataset): DropDataset {
 
   return {
     schemaVersion: 2,
-    attributes: [...BASE_ATTRIBUTES],
+    attributes: normalizeAttributeCatalog(input.attributes),
     slots,
     dungeons,
   }
@@ -65,15 +71,16 @@ export function normalizeLegacyDataset(input: LegacyDataset): DropDataset {
     }
     treasure.entries.push(...table.items.map((item, itemIndex) => {
       const combo = item.name.includes("·") ? item.name.split("·").slice(1).join("·") : item.tags?.find((tag) => tag.length === 2) ?? ""
-      const expandedAttributes = (item.attrs ?? []).map((attr) => attr.name).filter((attr): attr is typeof BASE_ATTRIBUTES[number] =>
-        BASE_ATTRIBUTES.includes(attr as typeof BASE_ATTRIBUTES[number]),
+      const expandedAttributes = normalizeExpandedAttributes(
+        item.attrs?.map((attr) => attr.name),
+        combo,
       )
       return {
         id: `${stableId("entry", table.baojian, tableIndex)}-${itemIndex + 1}-${treasure.entries.length + 1}`,
         name: item.name,
         slot: item.slot,
         attributeCombo: combo,
-        expandedAttributes: expandedAttributes.length ? expandedAttributes : expandAttributeCombo(combo),
+        expandedAttributes,
         weight: item.weight,
         verified: item.tags?.includes("verified") ?? false,
         quality: item.quality,
@@ -87,7 +94,7 @@ export function normalizeLegacyDataset(input: LegacyDataset): DropDataset {
 
   return {
     schemaVersion: 2,
-    attributes: [...BASE_ATTRIBUTES],
+    attributes: normalizeAttributeCatalog(input.attributes),
     slots: [...new Set(input.slots)],
     dungeons: [...dungeonMap.values()].map((dungeon) => ({
       id: dungeon.id,

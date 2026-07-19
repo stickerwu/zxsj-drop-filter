@@ -12,7 +12,7 @@ describe("attribute normalization", () => {
       attributes: ["会心", "专精", "调息", "元御"],
       slots: ["衣服"],
       dungeons: [{
-        name: "斩恨磨蛰境",
+        name: "斩恨踏蜚境",
         treasures: [{
           name: "致知",
           entries: [{ slot: "衣服", attributeCombo: "会专", weight: 1 }],

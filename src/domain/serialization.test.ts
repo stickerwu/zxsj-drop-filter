@@ -7,7 +7,7 @@ const dataset = normalizeDataset({
   attributes: ["会心", "专精", "调息", "元御"],
   slots: ["衣服"],
   dungeons: [{
-    name: "斩恨磨蛰境",
+    name: "斩恨踏蜚境",
     treasures: [{
       name: "致知",
       entries: [{ slot: "衣服", attributeCombo: "会专", weight: 1 }],
@@ -37,19 +37,19 @@ describe("dataset serialization", () => {
 
   it("round trips the real zx1 encryption envelope", () => {
     const parsed = parseZxData(serializeZxData(dataset))
-    expect(parsed.dataset.dungeons[0].name).toBe("斩恨磨蛰境")
+    expect(parsed.dataset.dungeons[0].name).toBe("斩恨踏蜚境")
     expect(parsed.dataset.dungeons[0].treasures[0].entries[0].expandedAttributes).toEqual(["会心", "专精"])
   })
 
   it("reads the legacy catalog table shape", () => {
     const parsed = parseJsonData(JSON.stringify({
       version: 5,
-      dungeons: ["斩恨磨蛰境"],
+      dungeons: ["斩恨踏蜚境"],
       baojian: ["致知"],
       slots: ["衣服"],
       attributes: ["会心", "专精"],
       tables: [{
-        dungeon: "斩恨磨蛰境",
+        dungeon: "斩恨踏蜚境",
         baojian: "致知",
         items: [{
           name: "衣服·会专",

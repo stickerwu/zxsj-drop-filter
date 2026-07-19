@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest"
+import { expandAttributeCombo } from "./attributes"
 import { entryMatches, calculateMatch } from "./matching"
 import type { DropEntry, Dungeon, FilterState, Treasure } from "./types"
 
@@ -6,7 +7,7 @@ const entry = (combo: string, slot = "衣服", weight = 1): DropEntry => ({
   id: combo + slot,
   slot,
   attributeCombo: combo,
-  expandedAttributes: combo === "会专" ? ["会心", "专精"] : ["会心"],
+  expandedAttributes: expandAttributeCombo(combo),
   weight,
   verified: true,
 })
@@ -21,6 +22,17 @@ const baseFilter: FilterState = {
 describe("drop matching", () => {
   it("matches an attribute contained in a combined combo", () => {
     expect(entryMatches(entry("会专"), baseFilter)).toBe(true)
+  })
+
+  it("matches a selected double-attribute filter as a complete combination", () => {
+    expect(entryMatches(entry("会专"), {
+      ...baseFilter,
+      attributes: ["会专"],
+    })).toBe(true)
+    expect(entryMatches(entry("会调"), {
+      ...baseFilter,
+      attributes: ["会专"],
+    })).toBe(false)
   })
 
   it("requires every selected attribute in all mode", () => {
@@ -53,7 +65,7 @@ describe("drop matching", () => {
     }
     const dungeon: Dungeon = {
       id: "zhan-hen",
-      name: "斩恨磨蛰境",
+      name: "斩恨踏蜚境",
       treasures: [treasure],
     }
     const result = calculateMatch(treasure, dungeon, baseFilter)

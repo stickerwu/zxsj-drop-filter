@@ -17,7 +17,7 @@ import { toast, Toaster } from "sonner"
 import { recommendTreasures } from "@/domain/recommendations"
 import { parseJsonData, parseZxData, serializeJsonData, serializeZxData } from "@/domain/serialization"
 import { expandAttributeCombo } from "@/domain/attributes"
-import type { AttributeName, DropDataset, DropEntry, MatchMode } from "@/domain/types"
+import { FILTER_ATTRIBUTES, type AttributeFilterName, type DropDataset, type DropEntry, type MatchMode } from "@/domain/types"
 import { useAppStore } from "@/store/app-store"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -28,11 +28,12 @@ import { Label } from "@/components/ui/label"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/components/ui/resizable"
 import { ScrollArea } from "@/components/ui/scroll-area"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 
-const attributes: AttributeName[] = ["会心", "专精", "调息", "元御"]
+const attributes = [...FILTER_ATTRIBUTES]
 
 function formatPercent(value: number) {
   return `${(value * 100).toFixed(2)}%`
@@ -117,7 +118,7 @@ function FilterSidebar() {
           title="想要的属性"
           values={attributes}
           selected={filters.attributes}
-          onChange={(value) => setFilter("attributes", value as AttributeName[])}
+          onChange={(value) => setFilter("attributes", value as AttributeFilterName[])}
         />
         <div className="border-b border-slate-200 px-4 py-3">
           <Label className="text-xs font-semibold text-slate-700">属性匹配</Label>
@@ -182,7 +183,7 @@ function CommandBar({ onOpenEditor }: { onOpenEditor: () => void }) {
     }
   }
   const copyAll = async () => {
-    await navigator.clipboard.writeText("诛仙世界 · 秘境掉落筛选")
+    await navigator.clipboard.writeText("诛仙高手秘境掉落软件")
     toast.success("已复制项目标题")
   }
   const exportJson = () => {
@@ -208,7 +209,7 @@ function CommandBar({ onOpenEditor }: { onOpenEditor: () => void }) {
     anchor.download = "drop_tables.zx"
     anchor.click()
     URL.revokeObjectURL(url)
-    toast.success("旧版 .zx 数据已导出")
+    toast.success(".zx 数据已导出")
   }
   return (
     <header className="flex h-16 items-center justify-between border-b border-slate-200 bg-white px-5">
@@ -216,8 +217,7 @@ function CommandBar({ onOpenEditor }: { onOpenEditor: () => void }) {
         <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-teal-700 text-white shadow-sm"><Sparkles className="h-4 w-4" /></div>
         <div>
           <div className="flex items-center gap-2">
-            <span className="text-base font-bold tracking-tight text-slate-950">秘境掉落筛选</span>
-            <Badge className="bg-teal-50 text-teal-800 hover:bg-teal-50">演示数据</Badge>
+            <span className="text-base font-bold tracking-tight text-slate-950">诛仙高手秘境掉落软件</span>
           </div>
           <p className="text-xs text-slate-500">选择属性/部位即可自动推荐宝鉴</p>
         </div>
@@ -269,16 +269,17 @@ function RecommendationTable({ recommendations }: { recommendations: ReturnType<
   return (
     <div className="min-h-0 flex-1 overflow-hidden">
       <ScrollArea className="h-full">
-        <Table className="min-w-[760px]">
+        <Table className="min-w-[1040px]">
           <TableHeader className="sticky top-0 z-10 bg-slate-50">
             <TableRow>
-              <TableHead className="w-12 text-center">#</TableHead>
+              <TableHead className="w-16 text-center">推荐</TableHead>
               <TableHead>宝鉴</TableHead>
               <TableHead>最佳概率</TableHead>
               <TableHead>最佳副本</TableHead>
               <TableHead>平均概率</TableHead>
               <TableHead>命中组合</TableHead>
               <TableHead>命中条数</TableHead>
+              <TableHead className="min-w-[280px]">预览（点选看完整）</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -295,11 +296,109 @@ function RecommendationTable({ recommendations }: { recommendations: ReturnType<
                 <TableCell>{formatPercent(item.averageProbability)}</TableCell>
                 <TableCell>{item.matchedCombinationCount}</TableCell>
                 <TableCell>{item.totalMatchedRows}</TableCell>
+                <TableCell className="max-w-[360px] truncate text-xs text-slate-500">
+                  {item.bestMatch.matchedEntries.slice(0, 4).map((entry) => `${entry.slot}·${entry.attributeCombo}`).join("、")}
+                  {item.bestMatch.matchedEntries.length > 4 ? ` 等${item.bestMatch.matchedEntries.length}条` : ""}
+                </TableCell>
               </TableRow>
             ))}
             {recommendations.length === 0 && (
-              <TableRow><TableCell colSpan={7} className="h-40 text-center text-sm text-slate-500">当前条件没有命中掉落，请放宽属性或部位限制。</TableCell></TableRow>
+              <TableRow><TableCell colSpan={8} className="h-40 text-center text-sm text-slate-500">当前条件没有命中掉落，请放宽属性或部位限制。</TableCell></TableRow>
             )}
+          </TableBody>
+        </Table>
+      </ScrollArea>
+    </div>
+  )
+}
+
+function DungeonDetailsTable({ recommendations }: { recommendations: ReturnType<typeof recommendTreasures> }) {
+  const selectRecommendation = useAppStore((state) => state.selectRecommendation)
+  const rows = recommendations
+    .flatMap((item) => item.dungeonDetails.map((detail) => ({
+      recommendationId: item.id,
+      treasureName: item.treasureName,
+      detail,
+    })))
+    .sort((left, right) =>
+      right.detail.probability - left.detail.probability
+      || right.detail.matchedRowCount - left.detail.matchedRowCount
+      || left.detail.dungeonName.localeCompare(right.detail.dungeonName, "zh-CN"),
+    )
+  return (
+    <div className="min-h-0 flex-1 overflow-hidden">
+      <ScrollArea className="h-full">
+        <Table className="min-w-[980px]">
+          <TableHeader className="sticky top-0 z-10 bg-slate-50">
+            <TableRow>
+              <TableHead className="w-16 text-center">排名</TableHead>
+              <TableHead>副本</TableHead>
+              <TableHead>宝鉴</TableHead>
+              <TableHead>命中概率</TableHead>
+              <TableHead>期望次数</TableHead>
+              <TableHead>命中/总数</TableHead>
+              <TableHead className="min-w-[300px]">预览（点选看完整）</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {rows.map((row, index) => (
+              <TableRow key={`${row.recommendationId}-${row.detail.dungeonId}`} className="cursor-pointer hover:bg-slate-50" onClick={() => selectRecommendation(row.recommendationId)}>
+                <TableCell className="text-center font-mono text-xs text-slate-500">{index + 1}</TableCell>
+                <TableCell className="whitespace-nowrap font-medium">{row.detail.dungeonName}</TableCell>
+                <TableCell>{row.treasureName}</TableCell>
+                <TableCell><Badge variant={row.detail.probability >= 0.75 ? "default" : "secondary"}>{formatPercent(row.detail.probability)}</Badge></TableCell>
+                <TableCell>{formatExpected(row.detail.expectedRuns)}</TableCell>
+                <TableCell>{row.detail.matchedRowCount}/{row.detail.totalRowCount}</TableCell>
+                <TableCell className="max-w-[380px] truncate text-xs text-slate-500">{row.detail.matchedEntries.slice(0, 4).map((entry) => `${entry.slot}·${entry.attributeCombo}`).join("、")}{row.detail.matchedEntries.length > 4 ? ` 等${row.detail.matchedEntries.length}条` : ""}</TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </ScrollArea>
+    </div>
+  )
+}
+
+function HitItemsTable({ recommendations }: { recommendations: ReturnType<typeof recommendTreasures> }) {
+  const selectRecommendation = useAppStore((state) => state.selectRecommendation)
+  const rows = recommendations.flatMap((item) => item.dungeonDetails.flatMap((detail) => detail.matchedEntries.map((entry) => ({
+    id: `${item.id}-${detail.dungeonId}-${entry.id}`,
+    recommendationId: item.id,
+    dungeonName: detail.dungeonName,
+    treasureName: item.treasureName,
+    entry,
+    probability: detail.totalWeight > 0 ? entry.weight / detail.totalWeight : 0,
+    expectedRuns: detail.expectedRuns,
+  }))))
+  return (
+    <div className="min-h-0 flex-1 overflow-hidden">
+      <ScrollArea className="h-full">
+        <Table className="min-w-[980px]">
+          <TableHeader className="sticky top-0 z-10 bg-slate-50">
+            <TableRow>
+              <TableHead>副本</TableHead>
+              <TableHead>宝鉴</TableHead>
+              <TableHead>部位</TableHead>
+              <TableHead>属性</TableHead>
+              <TableHead>概率</TableHead>
+              <TableHead>期望次数</TableHead>
+              <TableHead>权重</TableHead>
+              <TableHead>展开属性</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {rows.map((row) => (
+              <TableRow key={row.id} className="cursor-pointer hover:bg-slate-50" onClick={() => selectRecommendation(row.recommendationId)}>
+                <TableCell className="whitespace-nowrap">{row.dungeonName}</TableCell>
+                <TableCell>{row.treasureName}</TableCell>
+                <TableCell>{row.entry.slot}</TableCell>
+                <TableCell className="font-medium">{row.entry.attributeCombo}</TableCell>
+                <TableCell>{formatPercent(row.probability)}</TableCell>
+                <TableCell>{formatExpected(row.expectedRuns)}</TableCell>
+                <TableCell>{row.entry.weight}</TableCell>
+                <TableCell className="text-xs text-slate-500">{row.entry.expandedAttributes.join(" + ")}</TableCell>
+              </TableRow>
+            ))}
           </TableBody>
         </Table>
       </ScrollArea>
@@ -367,6 +466,12 @@ function DataEditorDialog({ open, onOpenChange }: { open: boolean; onOpenChange:
   const treasure = dungeon?.treasures.find((item) => item.id === treasureId) ?? dungeon?.treasures[0]
   const [entries, setEntries] = useState<DropEntry[]>(treasure?.entries ?? [])
 
+  const selectDungeon = (id: string) => {
+    const nextDungeon = dataset.dungeons.find((item) => item.id === id)
+    setDungeonId(id)
+    setTreasureId(nextDungeon?.treasures[0]?.id ?? "")
+    setEntries(nextDungeon?.treasures[0]?.entries ?? [])
+  }
   const selectTreasure = (id: string) => {
     setTreasureId(id)
     setEntries(dungeon?.treasures.find((item) => item.id === id)?.entries ?? [])
@@ -386,42 +491,60 @@ function DataEditorDialog({ open, onOpenChange }: { open: boolean; onOpenChange:
   }
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-5xl">
-        <DialogHeader>
+      <DialogContent className="flex h-[720px] max-h-[calc(100vh-2rem)] w-[min(1100px,calc(100vw-2rem))] max-w-none flex-col gap-0 overflow-hidden">
+        <DialogHeader className="shrink-0 border-b border-slate-200 pb-4">
           <DialogTitle>掉落表编辑器</DialogTitle>
           <DialogDescription>维护副本、宝鉴和部位/属性/权重。保存前请确认权重为正数。</DialogDescription>
         </DialogHeader>
-        <div className="grid max-h-[65vh] grid-cols-[220px_1fr] gap-4 overflow-hidden">
-          <div className="space-y-3 overflow-y-auto rounded-md border bg-slate-50 p-3">
-            <Label>副本</Label>
-            <select className="h-9 w-full rounded-md border bg-white px-2 text-sm" value={dungeon?.id} onChange={(event) => { setDungeonId(event.target.value); const next = dataset.dungeons.find((item) => item.id === event.target.value); setTreasureId(next?.treasures[0]?.id ?? ""); setEntries(next?.treasures[0]?.entries ?? []) }}>
-              {dataset.dungeons.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}
-            </select>
-            <Label>宝鉴</Label>
-            <select className="h-9 w-full rounded-md border bg-white px-2 text-sm" value={treasure?.id} onChange={(event) => selectTreasure(event.target.value)}>
-              {dungeon?.treasures.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}
-            </select>
-            <Button className="w-full" variant="outline" onClick={() => setEntries((current) => [...current, { id: crypto.randomUUID(), slot: dataset.slots[0] ?? "衣服", attributeCombo: "会心", expandedAttributes: ["会心"], weight: 1, verified: false }])}><FileDown />新增掉落行</Button>
-            <Button className="w-full" variant="secondary" onClick={() => setEntries((current) => current.map((entry) => ({ ...entry, verified: true })))}><Check />全部标为已核对</Button>
+        <div className="grid min-h-0 flex-1 grid-cols-[220px_minmax(0,1fr)] gap-4 py-4">
+          <div className="min-h-0 overflow-y-auto rounded-md border bg-slate-50 p-3">
+            <div className="space-y-3">
+              <div className="space-y-1.5">
+                <Label>副本</Label>
+                <Select value={dungeon?.id} onValueChange={selectDungeon}>
+                  <SelectTrigger><SelectValue placeholder="选择副本" /></SelectTrigger>
+                  <SelectContent>
+                    {dataset.dungeons.map((item) => <SelectItem key={item.id} value={item.id}>{item.name}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1.5">
+                <Label>宝鉴</Label>
+                <Select value={treasure?.id} onValueChange={selectTreasure}>
+                  <SelectTrigger><SelectValue placeholder="选择宝鉴" /></SelectTrigger>
+                  <SelectContent>
+                    {dungeon?.treasures.map((item) => <SelectItem key={item.id} value={item.id}>{item.name}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+              <Button className="w-full" variant="outline" onClick={() => setEntries((current) => [...current, { id: crypto.randomUUID(), slot: dataset.slots[0] ?? "衣服", attributeCombo: "会心", expandedAttributes: ["会心"], weight: 1, verified: false }])}><FileDown />新增掉落行</Button>
+              <Button className="w-full" variant="secondary" onClick={() => setEntries((current) => current.map((entry) => ({ ...entry, verified: true })))}><Check />全部标为已核对</Button>
+            </div>
           </div>
-          <ScrollArea className="rounded-md border">
+          <ScrollArea className="min-h-0 rounded-md border">
             <div className="space-y-2 p-3">
               {entries.map((entry) => (
-                <div key={entry.id} className="grid grid-cols-[120px_110px_90px_1fr_auto] items-center gap-2 rounded-md border bg-white p-2">
-                  <select className="h-8 rounded border px-2 text-xs" value={entry.slot} onChange={(event) => updateEntry(entry.id, { slot: event.target.value })}>{dataset.slots.map((slot) => <option key={slot}>{slot}</option>)}</select>
-                  <Input className="h-8 text-xs" value={entry.attributeCombo} onChange={(event) => updateEntry(entry.id, { attributeCombo: event.target.value })} />
+                <div key={entry.id} className="grid min-h-12 grid-cols-[116px_108px_88px_minmax(160px,1fr)_auto] items-center gap-2 rounded-md border bg-white p-2">
+                  <Select value={entry.slot} onValueChange={(value) => updateEntry(entry.id, { slot: value })}>
+                    <SelectTrigger className="h-8 px-2 text-xs"><SelectValue placeholder="部位" /></SelectTrigger>
+                    <SelectContent>{dataset.slots.map((slot) => <SelectItem key={slot} value={slot}>{slot}</SelectItem>)}</SelectContent>
+                  </Select>
+                  <Select value={entry.attributeCombo} onValueChange={(value) => updateEntry(entry.id, { attributeCombo: value })}>
+                    <SelectTrigger className="h-8 px-2 text-xs"><SelectValue placeholder="属性" /></SelectTrigger>
+                    <SelectContent>{FILTER_ATTRIBUTES.map((attribute) => <SelectItem key={attribute} value={attribute}>{attribute}</SelectItem>)}</SelectContent>
+                  </Select>
                   <Input className="h-8 text-xs" type="number" min={0.01} step={0.01} value={entry.weight} onChange={(event) => updateEntry(entry.id, { weight: Number(event.target.value) })} />
-                  <Input className="h-8 text-xs" value={entry.expandedAttributes.join(" + ")} readOnly />
+                  <Input className="h-8 bg-slate-50 text-xs" value={entry.expandedAttributes.join(" + ")} readOnly />
                   <div className="flex items-center gap-1">
                     <Checkbox checked={entry.verified} onCheckedChange={(checked) => updateEntry(entry.id, { verified: Boolean(checked) })} />
-                    <Button variant="ghost" size="icon" className="h-8 w-8 text-red-600" onClick={() => setEntries((current) => current.filter((item) => item.id !== entry.id))}><Trash2 /></Button>
+                    <Button variant="ghost" size="icon" aria-label="删除掉落行" className="h-8 w-8 text-red-600" onClick={() => setEntries((current) => current.filter((item) => item.id !== entry.id))}><Trash2 /></Button>
                   </div>
                 </div>
               ))}
             </div>
           </ScrollArea>
         </div>
-        <DialogFooter>
+        <DialogFooter className="mt-0 shrink-0 border-t border-slate-200 pt-4">
           <Button variant="outline" onClick={() => onOpenChange(false)}>取消</Button>
           <Button onClick={() => { apply(); onOpenChange(false) }}><Save />应用当前表</Button>
         </DialogFooter>
@@ -455,20 +578,16 @@ function App() {
               <main className="flex h-full min-w-0 flex-col">
                 <SummaryBanner recommendationCount={recommendations.length} matchedRows={matchedRows} />
                 <Tabs value={activeResultTab} onValueChange={(value) => setResultTab(value as typeof activeResultTab)} className="flex min-h-0 flex-1 flex-col">
-                  <div className="border-b border-slate-200 px-4 pt-3">
-                    <TabsList className="bg-slate-100">
-                      <TabsTrigger value="recommendations">推荐宝鉴</TabsTrigger>
-                      <TabsTrigger value="dungeon-details">副本 × 宝鉴明细</TabsTrigger>
-                      <TabsTrigger value="hit-items">命中装备列表</TabsTrigger>
+                  <div className="border-b border-slate-200 px-4">
+                    <TabsList className="border-b-0">
+                      <TabsTrigger value="recommendations"><Sparkles className="h-3.5 w-3.5" />推荐宝鉴</TabsTrigger>
+                      <TabsTrigger value="dungeon-details"><Database className="h-3.5 w-3.5" />副本 × 宝鉴明细</TabsTrigger>
+                      <TabsTrigger value="hit-items"><Check className="h-3.5 w-3.5" />命中装备列表</TabsTrigger>
                     </TabsList>
                   </div>
                   <TabsContent value="recommendations" className="m-0 min-h-0 flex-1 p-0"><RecommendationTable recommendations={recommendations} /></TabsContent>
-                  <TabsContent value="dungeon-details" className="m-0 min-h-0 flex-1 overflow-auto p-4">
-                    <div className="grid gap-2">{recommendations.flatMap((item) => item.dungeonDetails.map((detail) => <div key={`${item.id}-${detail.dungeonId}`} className="flex items-center justify-between rounded-md border px-3 py-2 text-sm"><span>{detail.dungeonName} · {item.treasureName}</span><Badge variant="outline">{formatPercent(detail.probability)}</Badge></div>))}</div>
-                  </TabsContent>
-                  <TabsContent value="hit-items" className="m-0 min-h-0 flex-1 overflow-auto p-4">
-                    <div className="grid gap-2">{recommendations.flatMap((item) => item.bestMatch.matchedEntries.map((entry) => <div key={`${item.id}-${entry.id}`} className="flex items-center justify-between rounded-md border px-3 py-2 text-sm"><span>{item.treasureName} · {entry.slot} · {entry.attributeCombo}</span><span className="text-xs text-slate-500">权重 {entry.weight}</span></div>))}</div>
-                  </TabsContent>
+                  <TabsContent value="dungeon-details" className="m-0 min-h-0 flex-1 p-0"><DungeonDetailsTable recommendations={recommendations} /></TabsContent>
+                  <TabsContent value="hit-items" className="m-0 min-h-0 flex-1 p-0"><HitItemsTable recommendations={recommendations} /></TabsContent>
                 </Tabs>
               </main>
             </ResizablePanel>

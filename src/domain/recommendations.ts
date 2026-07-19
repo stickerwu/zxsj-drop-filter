@@ -37,7 +37,12 @@ export function recommendTreasures(
       existing.totalMatchedRows += match.matchedRowCount
       existing.matchedCombinationCount = Math.max(existing.matchedCombinationCount, match.matchedCombinationCount)
       existing.matchedRowCount = Math.max(existing.matchedRowCount, match.matchedRowCount)
-      if (match.probability > existing.bestProbability) {
+      const isBetterMatch = match.probability > existing.bestProbability
+        || (
+          match.probability === existing.bestProbability
+          && match.matchedRowCount > existing.bestMatch.matchedRowCount
+        )
+      if (isBetterMatch) {
         existing.bestProbability = match.probability
         existing.bestDungeonId = dungeon.id
         existing.bestDungeonName = dungeon.name

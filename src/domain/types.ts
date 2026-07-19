@@ -1,5 +1,8 @@
 export const BASE_ATTRIBUTES = ["会心", "专精", "调息", "元御"] as const
+export const COMBINATION_ATTRIBUTES = ["会专", "会调", "会元", "专调", "专元", "调元"] as const
+export const FILTER_ATTRIBUTES = [...BASE_ATTRIBUTES, ...COMBINATION_ATTRIBUTES] as const
 export type AttributeName = (typeof BASE_ATTRIBUTES)[number]
+export type AttributeFilterName = (typeof FILTER_ATTRIBUTES)[number]
 export type MatchMode = "any" | "all"
 
 export interface DropEntry {
@@ -29,13 +32,13 @@ export interface Dungeon {
 
 export interface DropDataset {
   schemaVersion: 2
-  attributes: AttributeName[]
+  attributes: AttributeFilterName[]
   slots: string[]
   dungeons: Dungeon[]
 }
 
 export interface FilterState {
-  attributes: AttributeName[]
+  attributes: AttributeFilterName[]
   mode: MatchMode
   slots: string[]
   dungeons: string[]
@@ -45,6 +48,7 @@ export interface MatchResult {
   treasureId: string
   dungeonId: string
   totalWeight: number
+  totalRowCount: number
   hitWeight: number
   probability: number
   expectedRuns: number | null

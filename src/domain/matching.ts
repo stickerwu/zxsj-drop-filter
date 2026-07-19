@@ -5,16 +5,20 @@ import type {
   MatchResult,
   Treasure,
 } from "./types"
+import { expandAttributeCombo } from "./attributes"
 
 export function entryMatches(entry: DropEntry, filter: FilterState): boolean {
   if (filter.slots.length > 0 && !filter.slots.includes(entry.slot)) return false
   if (filter.attributes.length === 0) return true
 
   const expanded = new Set(entry.expandedAttributes)
+  const matches = filter.attributes.map((attribute) =>
+    expandAttributeCombo(attribute).every((required) => expanded.has(required)),
+  )
   if (filter.mode === "all") {
-    return filter.attributes.every((attribute) => expanded.has(attribute))
+    return matches.every(Boolean)
   }
-  return filter.attributes.some((attribute) => expanded.has(attribute))
+  return matches.some(Boolean)
 }
 
 export function calculateMatch(
@@ -32,6 +36,7 @@ export function calculateMatch(
     treasureId: treasure.id,
     dungeonId: dungeon.id,
     totalWeight,
+    totalRowCount: treasure.entries.length,
     hitWeight,
     probability,
     expectedRuns: probability > 0 ? 1 / probability : null,
