@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest"
 import { normalizeDataset } from "./normalize"
-import { parseJsonData, serializeJsonData } from "./serialization"
+import { parseJsonData, parseZxData, serializeJsonData, serializeZxData } from "./serialization"
 
 const dataset = normalizeDataset({
   schemaVersion: 2,
@@ -33,5 +33,37 @@ describe("dataset serialization", () => {
         }],
       }],
     }))).toThrow()
+  })
+
+  it("round trips the real zx1 encryption envelope", () => {
+    const parsed = parseZxData(serializeZxData(dataset))
+    expect(parsed.dataset.dungeons[0].name).toBe("斩恨磨蛰境")
+    expect(parsed.dataset.dungeons[0].treasures[0].entries[0].expandedAttributes).toEqual(["会心", "专精"])
+  })
+
+  it("reads the legacy catalog table shape", () => {
+    const parsed = parseJsonData(JSON.stringify({
+      version: 5,
+      dungeons: ["斩恨磨蛰境"],
+      baojian: ["致知"],
+      slots: ["衣服"],
+      attributes: ["会心", "专精"],
+      tables: [{
+        dungeon: "斩恨磨蛰境",
+        baojian: "致知",
+        items: [{
+          name: "衣服·会专",
+          slot: "衣服",
+          weight: 2,
+          tags: ["会专", "会心", "专精", "verified"],
+          attrs: [{ name: "会心" }, { name: "专精" }],
+        }],
+      }],
+    }))
+    expect(parsed.dataset.dungeons[0].treasures[0].entries[0]).toMatchObject({
+      name: "衣服·会专",
+      verified: true,
+      expandedAttributes: ["会心", "专精"],
+    })
   })
 })

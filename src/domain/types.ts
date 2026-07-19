@@ -4,11 +4,15 @@ export type MatchMode = "any" | "all"
 
 export interface DropEntry {
   id: string
+  name?: string
   slot: string
   attributeCombo: string
   expandedAttributes: AttributeName[]
   weight: number
   verified: boolean
+  quality?: string
+  note?: string
+  tags?: string[]
 }
 
 export interface Treasure {
@@ -76,11 +80,15 @@ export interface ParseResult {
 
 export interface RawDropEntry {
   id?: string
+  name?: string
   slot: string
   attributeCombo: string
   expandedAttributes?: string[]
   weight: number
   verified?: boolean
+  quality?: string
+  note?: string
+  tags?: string[]
 }
 
 export interface RawTreasure {
@@ -100,4 +108,31 @@ export interface RawDataset {
   attributes?: string[]
   slots?: string[]
   dungeons: RawDungeon[]
+}
+
+export interface LegacyDropItem {
+  name: string
+  slot: string
+  weight: number
+  quality?: string
+  note?: string
+  tags?: string[]
+  attrs?: Array<{ name: string }>
+}
+
+export interface LegacyDropTable {
+  dungeon: string
+  baojian: string
+  note?: string
+  items: LegacyDropItem[]
+}
+
+export interface LegacyDataset {
+  version: number
+  dungeons: string[]
+  baojian: string[]
+  slots: string[]
+  attributes: string[]
+  source_note?: string
+  tables: LegacyDropTable[]
 }
