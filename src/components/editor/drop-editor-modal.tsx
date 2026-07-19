@@ -6,9 +6,8 @@ import {
   ListBox,
   Modal,
   Select,
-  Surface,
 } from "@heroui/react"
-import { Check, CheckCircle2, Plus, Save, Trash2 } from "lucide-react"
+import { Check, CheckCircle2, Gem, Plus, Save, Trash2 } from "lucide-react"
 import { toast } from "sonner"
 import { expandAttributeCombo } from "@/domain/attributes"
 import { FILTER_ATTRIBUTES, type DropDataset, type DropEntry } from "@/domain/types"
@@ -24,11 +23,13 @@ function EditorSelect({
   value,
   options,
   onChange,
+  compact = false,
 }: {
   label: string
   value: string
   options: SelectOption[]
   onChange: (value: string) => void
+  compact?: boolean
 }) {
   return (
     <Select
@@ -39,7 +40,7 @@ function EditorSelect({
         if (key !== null) onChange(String(key))
       }}
     >
-      <Select.Trigger className="h-9 min-h-9">
+      <Select.Trigger className={compact ? "h-[38px] min-h-[38px] rounded-md" : "h-10 min-h-10 rounded-md"}>
         <Select.Value />
         <Select.Indicator />
       </Select.Trigger>
@@ -155,23 +156,31 @@ export function DropEditorModal({
       <Modal.Trigger aria-hidden="true" className="hidden" />
       <Modal.Backdrop variant="blur">
         <Modal.Container placement="center" scroll="inside" size="lg">
-          <Modal.Dialog className="flex h-[720px] max-h-[calc(100vh-2rem)] w-[min(1100px,calc(100vw-2rem))] max-w-none flex-col overflow-hidden rounded-lg">
-            <Modal.Header className="shrink-0 border-b border-[var(--app-border)]">
-              <div className="min-w-0">
-                <Modal.Heading className="text-base font-semibold">
-                  掉落表编辑器
-                </Modal.Heading>
-                <p className="mt-1 text-xs text-[var(--app-text-muted)]">
-                  维护副本、宝鉴和部位 / 属性 / 权重，保存前请确认权重为正数。
-                </p>
+          <Modal.Dialog
+            className="flex h-[720px] max-h-[calc(100vh-2rem)] w-[min(1060px,calc(100vw-2rem))] max-w-none flex-col overflow-hidden rounded-lg"
+            data-editor-layout="reference"
+          >
+            <Modal.Header className="flex h-[72px] shrink-0 items-center border-b border-[var(--app-border)] px-6 py-0">
+              <div className="flex min-w-0 items-center gap-3">
+                <span className="flex size-9 shrink-0 items-center justify-center rounded-md bg-violet-100 text-violet-600 dark:bg-violet-950 dark:text-violet-300">
+                  <Gem className="size-[18px]" />
+                </span>
+                <div className="min-w-0">
+                  <Modal.Heading className="text-base font-semibold">
+                    掉落表编辑器
+                  </Modal.Heading>
+                  <p className="mt-1 truncate text-[11px] text-[var(--app-text-muted)]">
+                    维护副本、宝鉴和部位 / 属性 / 权重，保存前请确认权重为正数。
+                  </p>
+                </div>
               </div>
               <Modal.CloseTrigger aria-label="关闭编辑器" />
             </Modal.Header>
 
             <Modal.Body className="min-h-0 flex-1 overflow-hidden p-0">
-              <div className="grid h-full min-h-0 grid-cols-[220px_minmax(0,1fr)] gap-4 p-4">
-                <Surface className="min-h-0 overflow-y-auto rounded-md border border-[var(--app-border)] bg-[var(--app-surface-muted)] p-3">
-                  <div className="space-y-4">
+              <div className="grid h-full min-h-0 grid-cols-[230px_minmax(0,1fr)]">
+                <div className="min-h-0 overflow-y-auto border-r border-[var(--app-border)] bg-[var(--app-surface-muted)] p-5">
+                  <div className="space-y-5">
                     <div className="space-y-1.5">
                       <p className="text-xs font-medium text-[var(--app-text)]">副本</p>
                       <EditorSelect
@@ -190,12 +199,8 @@ export function DropEditorModal({
                         onChange={selectTreasure}
                       />
                     </div>
-                    <div className="border-t border-[var(--app-border)] pt-3">
-                      <p className="text-[11px] leading-5 text-[var(--app-text-muted)]">
-                        当前表共 {entries.length} 条掉落。切换副本或宝鉴时，右侧列表会立即更新。
-                      </p>
-                    </div>
                     <Button
+                      className="h-10 rounded-md"
                       fullWidth
                       size="sm"
                       variant="outline"
@@ -217,6 +222,7 @@ export function DropEditorModal({
                       新增掉落行
                     </Button>
                     <Button
+                      className="h-10 rounded-md bg-[var(--app-accent-soft)] text-[var(--app-accent)]"
                       fullWidth
                       size="sm"
                       variant="secondary"
@@ -230,30 +236,26 @@ export function DropEditorModal({
                       全部标为已核对
                     </Button>
                   </div>
-                </Surface>
+                </div>
 
-                <div className="min-h-0 overflow-y-auto rounded-md border border-[var(--app-border)] bg-[var(--app-surface-muted)]">
-                  <div className="sticky top-0 z-10 grid grid-cols-[116px_116px_88px_minmax(160px,1fr)_86px] gap-2 border-b border-[var(--app-border)] bg-[var(--app-surface-muted)] px-3 py-2 text-[11px] font-medium text-[var(--app-text-muted)]">
-                    <span>部位</span>
-                    <span>属性</span>
-                    <span>权重</span>
-                    <span>展开属性</span>
-                    <span className="text-center">操作</span>
-                  </div>
-                  <div className="space-y-2 p-3">
+                <div className="min-h-0 overflow-y-auto bg-[var(--app-surface)] p-4">
+                  <div className="space-y-2">
                     {entries.map((entry, index) => (
                       <div
                         key={entry.id}
                         data-testid={`drop-entry-row-${index}`}
-                        className="grid min-h-14 grid-cols-[116px_116px_88px_minmax(160px,1fr)_86px] items-center gap-2 rounded-md border border-[var(--app-border)] bg-[var(--app-surface)] p-2"
+                        data-row-density="compact"
+                        className="grid h-[46px] grid-cols-[108px_108px_80px_minmax(180px,1fr)_38px_38px] items-center gap-2 rounded-md border border-[var(--app-border)] bg-[var(--app-surface)] px-2 shadow-sm"
                       >
                         <EditorSelect
+                          compact
                           label="部位"
                           value={entry.slot}
                           options={slotOptions}
                           onChange={(value) => updateEntry(entry.id, { slot: value })}
                         />
                         <EditorSelect
+                          compact
                           label="属性"
                           value={entry.attributeCombo}
                           options={attributeOptions}
@@ -263,7 +265,7 @@ export function DropEditorModal({
                         />
                         <Input
                           aria-label="权重"
-                          className="h-9"
+                          className="h-[38px] rounded-md"
                           min={0.01}
                           step={0.01}
                           type="number"
@@ -274,41 +276,39 @@ export function DropEditorModal({
                         />
                         <Input
                           aria-label="展开属性"
-                          className="h-9 bg-[var(--app-surface-muted)] text-xs"
+                          className="h-[38px] rounded-md bg-[var(--app-surface-muted)] text-xs"
                           readOnly
                           value={entry.expandedAttributes.join(" + ")}
                         />
-                        <div className="flex items-center justify-end gap-1">
-                          <Checkbox
-                            aria-label="已核对"
-                            isSelected={entry.verified}
-                            onChange={(checked) =>
-                              updateEntry(entry.id, { verified: checked })
-                            }
-                          >
-                            <Checkbox.Content>
-                              <Checkbox.Control>
-                                <Checkbox.Indicator>
-                                  <Check className="size-3" />
-                                </Checkbox.Indicator>
-                              </Checkbox.Control>
-                            </Checkbox.Content>
-                          </Checkbox>
-                          <Button
-                            aria-label="删除掉落行"
-                            className="text-red-600"
-                            isIconOnly
-                            size="sm"
-                            variant="ghost"
-                            onPress={() =>
-                              setEntries((current) =>
-                                current.filter((item) => item.id !== entry.id),
-                              )
-                            }
-                          >
-                            <Trash2 className="size-3.5" />
-                          </Button>
-                        </div>
+                        <Checkbox
+                          aria-label="已核对"
+                          isSelected={entry.verified}
+                          onChange={(checked) =>
+                            updateEntry(entry.id, { verified: checked })
+                          }
+                        >
+                          <Checkbox.Content className="flex size-8 items-center justify-center">
+                            <Checkbox.Control className="editor-verified-control">
+                              <Checkbox.Indicator>
+                                <Check className="size-3" />
+                              </Checkbox.Indicator>
+                            </Checkbox.Control>
+                          </Checkbox.Content>
+                        </Checkbox>
+                        <Button
+                          aria-label="删除掉落行"
+                          className="size-8 min-w-8 rounded-md"
+                          isIconOnly
+                          size="sm"
+                          variant="danger-soft"
+                          onPress={() =>
+                            setEntries((current) =>
+                              current.filter((item) => item.id !== entry.id),
+                            )
+                          }
+                        >
+                          <Trash2 className="size-3.5" />
+                        </Button>
                       </div>
                     ))}
                   </div>
@@ -316,14 +316,15 @@ export function DropEditorModal({
               </div>
             </Modal.Body>
 
-            <Modal.Footer className="shrink-0 border-t border-[var(--app-border)]">
+            <Modal.Footer className="flex h-[72px] shrink-0 items-center border-t border-[var(--app-border)] px-6 py-0">
               <div className="mr-auto min-h-5 text-xs text-red-600">
                 {hasInvalidWeight ? "权重必须是大于 0 的数字" : null}
               </div>
-              <Button size="sm" variant="ghost" onPress={() => onOpenChange(false)}>
+              <Button className="h-10 rounded-md px-5" size="sm" variant="outline" onPress={() => onOpenChange(false)}>
                 取消
               </Button>
               <Button
+                className="h-10 rounded-md px-5"
                 isDisabled={hasInvalidWeight}
                 size="sm"
                 variant="primary"

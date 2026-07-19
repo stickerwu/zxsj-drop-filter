@@ -10,11 +10,16 @@ describe("drop editor modal", () => {
     const user = userEvent.setup()
     render(<DropEditorModal open onOpenChange={() => undefined} />)
 
+    expect(screen.getByRole("dialog", { name: "掉落表编辑器" })).toHaveAttribute(
+      "data-editor-layout",
+      "reference",
+    )
     await user.click(screen.getByRole("button", { name: /副本$/ }))
     expect(document.querySelectorAll('[role="option"] .lucide-check')).toHaveLength(1)
     await user.click(screen.getByRole("option", { name: "斩恨踏蜚境" }))
 
     const firstRow = screen.getByTestId("drop-entry-row-0")
+    expect(firstRow).toHaveAttribute("data-row-density", "compact")
     await user.click(within(firstRow).getByRole("button", { name: /属性$/ }))
     await user.click(screen.getByRole("option", { name: "会专" }))
 

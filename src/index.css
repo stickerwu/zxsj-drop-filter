@@ -207,6 +207,15 @@ select:focus-visible {
   font-size: 13px !important;
 }
 
+.editor-verified-control {
+  width: 28px !important;
+  height: 28px !important;
+  border: 0 !important;
+  border-radius: 6px !important;
+  background: color-mix(in srgb, var(--app-accent) 14%, transparent) !important;
+  color: var(--app-accent) !important;
+}
+
 @keyframes tab-enter {
   from {
     opacity: 0;
