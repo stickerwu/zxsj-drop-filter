@@ -41,8 +41,8 @@ async function prepare() {
   )
   const names = {
     installer: `zxsj-drop-filter_${version}_x64-setup.exe`,
-    updater: `zxsj-drop-filter_${version}_x64.nsis.zip`,
-    signature: `zxsj-drop-filter_${version}_x64.nsis.zip.sig`,
+    updater: `zxsj-drop-filter_${version}_x64-setup.exe`,
+    signature: `zxsj-drop-filter_${version}_x64-setup.exe.sig`,
   }
 
   await rm(releaseDirectory, { force: true, recursive: true })
@@ -50,18 +50,16 @@ async function prepare() {
 
   const output = {
     installerPath: path.join(releaseDirectory, names.installer),
-    updaterPath: path.join(releaseDirectory, names.updater),
+    updaterPath: path.join(releaseDirectory, names.installer),
     signaturePath: path.join(releaseDirectory, names.signature),
   }
   await Promise.all([
     copyFile(source.installerPath, output.installerPath),
-    copyFile(source.updaterPath, output.updaterPath),
     copyFile(source.signaturePath, output.signaturePath),
   ])
 
   const hashes = {
     [names.installer]: await sha256File(output.installerPath),
-    [names.updater]: await sha256File(output.updaterPath),
     [names.signature]: await sha256File(output.signaturePath),
   }
   const checksumText = Object.entries(hashes)

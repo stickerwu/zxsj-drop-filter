@@ -19,12 +19,13 @@ function releaseAssetFiles(metadata) {
   const checksumPath =
     metadata.checksumPath ??
     path.join(path.dirname(metadata.output.installerPath), "SHA256SUMS.txt")
-  return [
+  const files = [
     [metadata.output.installerPath, metadata.names.installer],
     [metadata.output.updaterPath, metadata.names.updater],
     [metadata.output.signaturePath, metadata.names.signature],
     [checksumPath, "SHA256SUMS.txt"],
   ]
+  return [...new Map(files.map((file) => [file[1], file])).values()]
 }
 
 export async function prepareGiteeRelease({ api, metadata }) {

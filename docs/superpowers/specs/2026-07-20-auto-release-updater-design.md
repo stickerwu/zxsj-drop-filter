@@ -36,7 +36,7 @@ GitHub Actions 是唯一构建与发布编排器。工作流在 `windows-latest`
 发布链路分为四个边界明确的部分：
 
 1. **版本校验器**：确认标签与 npm、Cargo、Tauri 三处版本一致。
-2. **Tauri 构建器**：运行质量检查并生成 NSIS 安装包、更新 ZIP 和签名。
+2. **Tauri 构建器**：运行质量检查并生成同时用于安装和更新的 NSIS 安装包及签名。
 3. **发布编排器**：创建两端 Release、上传附件并生成更新清单。
 4. **应用更新器**：检查清单、下载签名包、提示安装并重启。
 
@@ -139,13 +139,13 @@ CI 不访问 Gitee Token，不生成 Release，也不使用 Tauri 私钥。
 5. 使用 Tauri 签名 Secrets 构建 Windows NSIS 安装包和 updater artifacts。
 6. 检查以下文件均存在且非空：
    - NSIS `.exe`
-   - NSIS updater `.zip`
-   - updater `.zip.sig`
+   - NSIS setup/update `.exe`
+   - updater `.exe.sig`
 7. 生成 `SHA256SUMS.txt`。
 8. 创建 GitHub Draft Release。
 9. 创建 Gitee prerelease；如果同标签 Release 已存在，则复用并清理同名旧附件。
-10. 向两端上传安装包、更新 ZIP、签名和 SHA-256 文件。
-11. 读取 Gitee 更新 ZIP 附件 ID，生成 `latest.json`。
+10. 向两端上传 NSIS 安装/更新包、签名和 SHA-256 文件。
+11. 读取 Gitee NSIS 附件 ID，生成 `latest.json`。
 12. 向 GitHub 和 Gitee Release 上传 `latest.json`。
 13. 将 GitHub Draft 和 Gitee prerelease 转为正式 Release。
 14. 最后创建或更新 Gitee `updater` 分支中的 `latest.json`。
@@ -166,7 +166,7 @@ Gitee 脚本调用官方 API：
 - 创建 `updater` 分支。
 - 创建或更新 `updater/latest.json`。
 
-Gitee 更新 ZIP 使用公开下载端点：
+Gitee NSIS 安装/更新包使用公开下载端点：
 
 ```text
 https://gitee.com/api/v5/repos/stickerwu/zxsj-drop-filter/releases/{release_id}/attach_files/{attach_file_id}/download
@@ -185,8 +185,8 @@ https://gitee.com/api/v5/repos/stickerwu/zxsj-drop-filter/releases/{release_id}/
   "pub_date": "2026-07-20T00:00:00Z",
   "platforms": {
     "windows-x86_64": {
-      "signature": "更新 ZIP 对应的签名内容",
-      "url": "Gitee 更新 ZIP 公开下载地址"
+      "signature": "NSIS 安装/更新包对应的签名内容",
+      "url": "Gitee NSIS 安装/更新包公开下载地址"
     }
   }
 }
@@ -198,7 +198,7 @@ https://gitee.com/api/v5/repos/stickerwu/zxsj-drop-filter/releases/{release_id}/
 - `notes` 来自当前版本的 changelog 段落。
 - `pub_date` 使用工作流生成的 RFC 3339 UTC 时间。
 - `signature` 是 `.sig` 文件内容，不是签名文件 URL。
-- `url` 必须指向 updater ZIP，不能指向普通 `.exe`。
+- `url` 必须指向带有匹配 `.exe.sig` 的 NSIS `setup.exe`。Tauri v2 直接使用该安装器更新；本项目不生成仅用于 Tauri v1 兼容的 `.nsis.zip`。
 - 只包含 `windows-x86_64`。
 - 预发布版本不能写入稳定清单。
 
@@ -319,7 +319,7 @@ error -> checking
 - 标签格式校验。
 - 三处版本不一致时失败。
 - changelog 版本段提取。
-- updater ZIP 与 `.sig` 配对。
+- NSIS `setup.exe` 与 `.exe.sig` 配对。
 - 缺少任何必要附件时失败。
 - Gitee 附件响应转为公开下载 URL。
 - `latest.json` schema 和内容。
@@ -330,13 +330,13 @@ error -> checking
 ## 验收标准
 
 - `pnpm test`、`pnpm lint`、`pnpm build` 和 Cargo 检查全部通过。
-- 本地 Tauri 构建生成 NSIS 安装包、updater ZIP 和 `.sig`。
+- 本地 Tauri 构建生成 NSIS `setup.exe` 和 `.exe.sig`。
 - 测试清单可被旧版本应用识别，并显示正确的新版本和说明。
 - 下载进度能在工具栏稳定显示，不改变工具栏高度。
 - 编辑器打开时不会出现叠加更新 Modal。
 - 签名损坏的更新包无法安装。
 - 推送新正式标签后，两端出现版本、说明和附件一致的正式 Release。
-- Gitee `updater/latest.json` 最后更新，并指向该 Gitee Release 的 updater ZIP。
+- Gitee `updater/latest.json` 最后更新，并指向该 Gitee Release 的 NSIS `setup.exe`。
 - Gitee 正常时从 Gitee 下载；Gitee 失败时能使用 GitHub 清单回退。
 - 用户选择“立即安装并重启”后完成安装并启动新版本。
 - `v0.3.0` Release 明确提示 `v0.2.1` 用户需要手动完成一次升级，后续版本才支持自动更新。

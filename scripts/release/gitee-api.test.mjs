@@ -167,14 +167,14 @@ describe("Gitee release orchestration", () => {
         tag_name: "v0.3.0",
       }),
       listAssets: vi.fn().mockResolvedValue([
-        { id: 1, name: "zxsj-drop-filter_0.3.0_x64.nsis.zip" },
+        { id: 1, name: "zxsj-drop-filter_0.3.0_x64-setup.exe" },
         { id: 2, name: "unrelated.txt" },
       ]),
       updateRelease: vi.fn().mockResolvedValue({ id: 12 }),
       uploadAsset: vi
         .fn()
         .mockImplementation(async (_releaseId, filePath, name) => ({
-          id: name.endsWith(".nsis.zip") ? 44 : name.length,
+          id: name.endsWith("-setup.exe") ? 44 : name.length,
           name,
           filePath,
         })),
@@ -185,13 +185,13 @@ describe("Gitee release orchestration", () => {
       notes: "- updater",
       names: {
         installer: "zxsj-drop-filter_0.3.0_x64-setup.exe",
-        updater: "zxsj-drop-filter_0.3.0_x64.nsis.zip",
-        signature: "zxsj-drop-filter_0.3.0_x64.nsis.zip.sig",
+        updater: "zxsj-drop-filter_0.3.0_x64-setup.exe",
+        signature: "zxsj-drop-filter_0.3.0_x64-setup.exe.sig",
       },
       output: {
         installerPath: "installer.exe",
-        updaterPath: "updater.zip",
-        signaturePath: "updater.zip.sig",
+        updaterPath: "installer.exe",
+        signaturePath: "installer.exe.sig",
       },
       checksumPath: "SHA256SUMS.txt",
     }
@@ -203,7 +203,7 @@ describe("Gitee release orchestration", () => {
     })
     expect(api.deleteAsset).toHaveBeenCalledWith(12, 1)
     expect(api.deleteAsset).not.toHaveBeenCalledWith(12, 2)
-    expect(api.uploadAsset).toHaveBeenCalledTimes(4)
+    expect(api.uploadAsset).toHaveBeenCalledTimes(3)
     expect(api.updateRelease).toHaveBeenCalledWith(
       12,
       expect.not.objectContaining({ target_commitish: expect.anything() }),

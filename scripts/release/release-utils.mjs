@@ -108,19 +108,13 @@ export async function discoverUpdaterArtifacts(
   const installerCandidates = versionMatches.filter((file) =>
     file.toLowerCase().endsWith("-setup.exe"),
   )
-  const updaterCandidates = versionMatches.filter((file) =>
-    file.toLowerCase().endsWith(".nsis.zip"),
-  )
 
   const installerPath = await requireOneFile(
     installerCandidates,
     "NSIS installer",
   )
-  const updaterPath = await requireOneFile(
-    updaterCandidates,
-    "NSIS updater archive",
-  )
-  const signaturePath = `${updaterPath}.sig`
+  const updaterPath = installerPath
+  const signaturePath = `${installerPath}.sig`
 
   try {
     if ((await stat(signaturePath)).size <= 0) throw new Error()

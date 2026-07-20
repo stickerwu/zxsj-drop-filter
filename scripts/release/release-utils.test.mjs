@@ -88,31 +88,32 @@ describe("release metadata", () => {
     expect(() => extractChangelogSection(text, "9.9.9")).toThrow("9.9.9")
   })
 
-  it("discovers one installer, updater archive, and matching signature", async () => {
+  it("discovers a v2 NSIS installer reused by the updater", async () => {
     const root = await createTemporaryDirectory()
     const nsis = path.join(root, "nsis")
     await mkdir(nsis, { recursive: true })
     await writeFile(path.join(nsis, "app_0.3.0_x64-setup.exe"), "installer")
-    await writeFile(path.join(nsis, "app_0.3.0_x64.nsis.zip"), "updater")
-    await writeFile(path.join(nsis, "app_0.3.0_x64.nsis.zip.sig"), "signature")
+    await writeFile(
+      path.join(nsis, "app_0.3.0_x64-setup.exe.sig"),
+      "signature",
+    )
 
     const artifacts = await discoverUpdaterArtifacts(root)
 
     expect(path.basename(artifacts.installerPath)).toBe(
       "app_0.3.0_x64-setup.exe",
     )
-    expect(path.basename(artifacts.updaterPath)).toBe(
-      "app_0.3.0_x64.nsis.zip",
+    expect(artifacts.updaterPath).toBe(artifacts.installerPath)
+    expect(artifacts.signaturePath).toBe(
+      `${artifacts.installerPath}.sig`,
     )
-    expect(artifacts.signaturePath).toBe(`${artifacts.updaterPath}.sig`)
   })
 
   it("rejects ambiguous installer output", async () => {
     const root = await createTemporaryDirectory()
     await writeFile(path.join(root, "first-setup.exe"), "first")
     await writeFile(path.join(root, "second-setup.exe"), "second")
-    await writeFile(path.join(root, "app.nsis.zip"), "updater")
-    await writeFile(path.join(root, "app.nsis.zip.sig"), "signature")
+    await writeFile(path.join(root, "first-setup.exe.sig"), "signature")
 
     await expect(discoverUpdaterArtifacts(root)).rejects.toThrow(
       "exactly one NSIS installer",
@@ -150,5 +151,25 @@ describe("release metadata", () => {
       "BA7816BF8F01CFEA414140DE5DAE2223B00361A396177A9CB410FF61F20015AD",
     )
     expect(await readFile(file, "utf8")).toBe("abc")
+  })
+
+  it("documents release secrets and the updater bootstrap", async () => {
+    const readme = await readFile(
+      path.join(process.cwd(), "README.md"),
+      "utf8",
+    )
+
+    for (const requiredText of [
+      "TAURI_SIGNING_PRIVATE_KEY",
+      "TAURI_SIGNING_PRIVATE_KEY_PASSWORD",
+      "GITEE_TOKEN",
+      "v0.2.1",
+      "v0.3.0",
+      "Gitee",
+      "GitHub",
+      "SmartScreen",
+    ]) {
+      expect(readme).toContain(requiredText)
+    }
   })
 })

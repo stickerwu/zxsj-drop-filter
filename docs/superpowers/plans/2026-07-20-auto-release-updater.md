@@ -14,7 +14,7 @@
 - Build each version once on GitHub Actions and upload identical bytes to GitHub and Gitee.
 - Use Gitee as the first updater endpoint and GitHub only as endpoint fallback.
 - Publish stable `vX.Y.Z` tags only; do not feed prereleases to the updater.
-- Require Tauri updater signatures; never publish an unsigned updater ZIP.
+- Require Tauri updater signatures; never publish an unsigned NSIS updater installer.
 - Keep `TAURI_SIGNING_PRIVATE_KEY`, `TAURI_SIGNING_PRIVATE_KEY_PASSWORD`, and `GITEE_TOKEN` out of git and build output.
 - Do not change drop filtering, recommendations, editor behavior, `.zx` serialization, or the existing data store.
 - Keep the update UI at a stable toolbar height and defer its install dialog while the drop editor is open.
@@ -209,7 +209,7 @@ export function createUpdaterManifest(input) {
 }
 ```
 
-`discoverUpdaterArtifacts()` must recursively inspect `src-tauri/target/release/bundle`, require exactly one NSIS setup `.exe`, exactly one updater `.nsis.zip`, and its matching `.sig`, and reject zero or ambiguous matches.
+`discoverUpdaterArtifacts()` must recursively inspect `src-tauri/target/release/bundle`, require exactly one NSIS setup `.exe` and its matching `.exe.sig`, reuse the `.exe` as the Tauri v2 updater package, and reject zero or ambiguous matches.
 
 - [ ] **Step 5: Implement validation and artifact preparation CLIs**
 
@@ -223,8 +223,7 @@ export function createUpdaterManifest(input) {
 
 ```text
 zxsj-drop-filter_<version>_x64-setup.exe
-zxsj-drop-filter_<version>_x64.nsis.zip
-zxsj-drop-filter_<version>_x64.nsis.zip.sig
+zxsj-drop-filter_<version>_x64-setup.exe.sig
 ```
 
 4. Write `SHA256SUMS.txt`.
@@ -402,8 +401,8 @@ Implement `lookupBranch()` with GET `/branches/{branch}` and `lookupFile()` with
 2. Find or create the tag Release with `prerelease: true`.
 3. Update title, notes, target branch, and prerelease state on reruns.
 4. List attachments and delete any attachment whose name matches a new upload.
-5. Upload installer, updater ZIP, signature, and `SHA256SUMS.txt`.
-6. Find the uploaded updater ZIP attachment.
+5. Upload the NSIS setup/update installer, signature, and `SHA256SUMS.txt`.
+6. Find the uploaded NSIS installer attachment.
 7. Write `artifacts/gitee-release.json`.
 
 `publish-gitee-release.mjs publish` must:
@@ -428,7 +427,7 @@ Add tests for:
 
 - `404` release lookup returns `null`.
 - Same-name attachment is deleted before upload.
-- Prepare output identifies the updater ZIP attachment ID.
+- Prepare output identifies the NSIS installer attachment ID used by updater.
 - Publish updates the Release before writing `updater/latest.json`.
 - API failures contain status and endpoint but not token.
 
@@ -1074,7 +1073,7 @@ Expose Secrets only to the build step:
 - run: pnpm release:prepare -- "${{ github.ref_name }}"
 ```
 
-The prepare command must fail unless installer, updater ZIP, and signature all exist.
+The prepare command must fail unless the NSIS installer and matching `.exe.sig` both exist.
 
 - [ ] **Step 4: Create and upload the GitHub Draft Release**
 
@@ -1258,8 +1257,8 @@ pnpm tauri build --bundles nsis
 Expected under `src-tauri/target/release/bundle/nsis`:
 
 - setup `.exe`
-- updater `.nsis.zip`
-- updater `.nsis.zip.sig`
+- updater-enabled NSIS `.exe`
+- updater `.exe.sig`
 
 Clear both environment variables after build.
 
@@ -1273,7 +1272,7 @@ Get-Content -Raw artifacts/release-metadata.json
 Get-Content artifacts/release/SHA256SUMS.txt
 ```
 
-Expected: metadata names one installer, one updater ZIP, one matching signature, and non-empty SHA-256 values.
+Expected: metadata names one NSIS installer reused by updater, one matching `.exe.sig`, and non-empty SHA-256 values.
 
 - [ ] **Step 7: Commit documentation**
 
@@ -1388,8 +1387,7 @@ Verify both Releases contain matching names and hashes:
 
 ```text
 zxsj-drop-filter_0.3.0_x64-setup.exe
-zxsj-drop-filter_0.3.0_x64.nsis.zip
-zxsj-drop-filter_0.3.0_x64.nsis.zip.sig
+zxsj-drop-filter_0.3.0_x64-setup.exe.sig
 SHA256SUMS.txt
 latest.json
 ```

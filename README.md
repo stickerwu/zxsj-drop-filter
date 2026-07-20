@@ -15,6 +15,8 @@
 - JSON / `.zx` 数据导入，以及 JSON 和兼容版 `.zx` 导出
 - 兼容旧版 `zx1`：SHA-256 计数器流、XOR、zlib level 9 和旧目录表结构
 - 固定高度掉落表编辑器：下拉切换副本、宝鉴、部位和属性，支持正权重校验
+- 启动后自动检查更新，默认从 Gitee 下载，失败时回退 GitHub
+- 后台显示下载进度，下载完成后由用户确认安装并重启
 - 本地计算，不上传游戏数据
 
 ## 开发
@@ -39,6 +41,36 @@ pnpm tauri:build
 ```text
 src-tauri/target/release/bundle/nsis/诛仙高手秘境掉落软件_<版本号>_x64-setup.exe
 ```
+
+## 自动发布与更新
+
+推送 `vX.Y.Z` 标签会触发 GitHub Actions：
+
+1. 校验 `package.json`、`Cargo.toml`、`tauri.conf.json` 和标签版本一致。
+2. 运行测试、lint、前端构建和 Rust 检查。
+3. 构建 Windows NSIS 安装包和对应的 Tauri updater 签名。
+4. 自动创建 GitHub Release 和 Gitee Release，并上传相同产物。
+5. 最后更新 Gitee `updater/latest.json` 稳定清单。
+
+GitHub 仓库需要配置以下 Secrets：
+
+```text
+TAURI_SIGNING_PRIVATE_KEY
+TAURI_SIGNING_PRIVATE_KEY_PASSWORD
+GITEE_TOKEN
+```
+
+签名私钥和密码不能提交到仓库。私钥丢失后无法继续为现有客户端发布可验证的自动更新包，必须在仓库之外保留加密备份。
+
+应用首先读取 Gitee 更新清单和 Gitee Release 附件；Gitee 请求失败时，再尝试 GitHub Release 的 `latest.json`。检测到新正式版后自动后台下载，下载完成后提供“稍后安装”和“立即安装并重启”。
+
+本项目使用 Tauri v2 updater 格式：同一个 NSIS `setup.exe` 同时用于手动安装和应用内更新，Release 还会附带对应的 `setup.exe.sig`。不生成只用于兼容 Tauri v1 客户端的 `.nsis.zip`。
+
+### 首次启用限制
+
+`v0.2.1` 没有内置 updater，无法自行升级。现有用户需要手动下载安装一次 `v0.3.0`；从 `v0.3.0` 开始，后续正式版本才支持应用内自动更新。
+
+Tauri updater 签名负责校验更新包完整性，但不等同于 Windows Authenticode 证书。当前首次下载安装包时，Windows SmartScreen 仍可能显示“未知发布者”提示。
 
 ## 数据说明
 
