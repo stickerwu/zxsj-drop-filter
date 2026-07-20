@@ -23,6 +23,12 @@
 - 不购买或配置 Windows Authenticode 商业证书。
 - 不修改掉落筛选、数据编辑、推荐计算或 `.zx` 数据结构。
 
+## 首次启用限制
+
+当前已发布的 `v0.2.1` 不包含 Tauri updater 插件，因此无法通过本次新增机制自行更新。首个包含更新器的正式版本定为 `v0.3.0`，现有用户需要手动下载安装一次 `v0.3.0`。
+
+从 `v0.3.0` 开始，后续正式版本才可以按照本设计自动检查、下载、安装并重启。README、`v0.3.0` Release 说明和应用更新文档必须明确这一点。
+
 ## 总体架构
 
 GitHub Actions 是唯一构建与发布编排器。工作流在 `windows-latest` 上构建一次，然后把完全相同的文件上传到 GitHub 和 Gitee。
@@ -333,6 +339,7 @@ error -> checking
 - Gitee `updater/latest.json` 最后更新，并指向该 Gitee Release 的 updater ZIP。
 - Gitee 正常时从 Gitee 下载；Gitee 失败时能使用 GitHub 清单回退。
 - 用户选择“立即安装并重启”后完成安装并启动新版本。
+- `v0.3.0` Release 明确提示 `v0.2.1` 用户需要手动完成一次升级，后续版本才支持自动更新。
 
 ## 官方参考
 
