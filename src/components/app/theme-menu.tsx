@@ -1,4 +1,5 @@
-import { useState } from "react"
+import { useId } from "react"
+import { Dropdown } from "@heroui/react"
 import { Check, Monitor, Moon, Sun } from "lucide-react"
 import { useAppTheme } from "@/theme/theme-context"
 import type { ThemeMode } from "@/theme/theme"
@@ -15,60 +16,59 @@ const themeOptions: Array<{
 
 export function ThemeMenu() {
   const { mode, resolvedTheme, setMode } = useAppTheme()
-  const [open, setOpen] = useState(false)
+  const menuLabelId = useId()
   const ActiveIcon =
     mode === "system" ? Monitor : resolvedTheme === "dark" ? Moon : Sun
 
   return (
-    <div className="relative">
-      <button
+    <Dropdown>
+      <Dropdown.Trigger
         aria-label="切换主题"
-        aria-expanded={open}
-        aria-haspopup="menu"
         className="flex size-8 items-center justify-center rounded-md text-[var(--app-text)] outline-none transition-colors hover:bg-[var(--app-control)] focus-visible:ring-2 focus-visible:ring-[var(--ring)]"
-        type="button"
-        onClick={() => setOpen((value) => !value)}
       >
         <ActiveIcon className="size-4" />
-      </button>
-
-      {open ? (
-        <div
+      </Dropdown.Trigger>
+      <Dropdown.Popover
+        className="w-32 min-w-32 rounded-md border border-[var(--app-border)] bg-[var(--app-surface)] p-1 shadow-[0_8px_20px_rgba(15,23,42,0.12)] dark:shadow-[0_8px_20px_rgba(0,0,0,0.35)]"
+        placement="bottom end"
+      >
+        <span id={menuLabelId} className="sr-only">
+          主题模式
+        </span>
+        <Dropdown.Menu
           aria-label="主题模式"
-          className="absolute right-0 top-full z-50 mt-1 w-32 rounded-md border border-[var(--app-border)] bg-[var(--app-surface)] p-1 shadow-[0_8px_20px_rgba(15,23,42,0.12)] dark:shadow-[0_8px_20px_rgba(0,0,0,0.35)]"
+          aria-labelledby={menuLabelId}
+          className="w-full min-w-0 gap-0 p-0 outline-none"
           data-density="compact"
-          role="menu"
+          selectedKeys={[mode]}
+          selectionMode="single"
+          onAction={(key) => setMode(String(key) as ThemeMode)}
         >
           {themeOptions.map((option) => {
             const Icon = option.icon
-            const selected = mode === option.key
-
             return (
-              <button
+              <Dropdown.Item
                 key={option.key}
-                className="flex h-[34px] w-full items-center gap-2 rounded-[5px] px-2 py-0 text-[13px] text-[var(--app-text)] outline-none hover:bg-[var(--app-control)] focus-visible:bg-[var(--app-control)]"
-                role="menuitemradio"
-                type="button"
-                aria-checked={selected}
-                onClick={() => {
-                  setMode(option.key)
-                  setOpen(false)
-                }}
+                id={option.key}
+                className="h-[34px] min-h-[34px] rounded-[5px] px-2 py-0 text-[13px] text-[var(--app-text)] outline-none data-[focused]:bg-[var(--app-control)] data-[hovered]:bg-[var(--app-control)] data-[selected]:bg-transparent"
+                textValue={option.label}
               >
-                <Icon className="size-3.5 shrink-0 text-[var(--app-text-muted)]" />
-                <span className="flex-1 text-left">{option.label}</span>
-                <span
-                  className="ml-auto inline-flex size-3.5 shrink-0 items-center justify-center text-[var(--app-accent)] opacity-0"
-                  data-testid={`theme-selected-${option.key}`}
-                  data-visible={selected ? "true" : "false"}
-                >
-                  {selected ? <Check className="size-3.5" strokeWidth={2.25} /> : null}
+                <span className="flex w-full items-center gap-2">
+                  <Icon className="size-3.5 shrink-0 text-[var(--app-text-muted)]" />
+                  <span className="flex-1">{option.label}</span>
+                  <Dropdown.ItemIndicator
+                    className="ml-auto size-3.5 shrink-0 text-[var(--app-accent)] opacity-0 data-[visible]:opacity-100"
+                    data-testid={`theme-selected-${option.key}`}
+                    data-visible={mode === option.key ? "true" : "false"}
+                  >
+                    <Check className="size-3.5" strokeWidth={2.25} />
+                  </Dropdown.ItemIndicator>
                 </span>
-              </button>
+              </Dropdown.Item>
             )
           })}
-        </div>
-      ) : null}
-    </div>
+        </Dropdown.Menu>
+      </Dropdown.Popover>
+    </Dropdown>
   )
 }
