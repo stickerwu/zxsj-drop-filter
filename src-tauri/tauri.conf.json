@@ -1,7 +1,7 @@
 {
   "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
   "productName": "诛仙高手秘境掉落软件",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "identifier": "com.stickerwu.zxsjdropfilter",
   "build": {
     "frontendDist": "../dist",
@@ -36,6 +36,12 @@
       "icons/icon.icns",
       "icons/icon.ico"
     ],
+    "windows": {
+      "nsis": {
+        "installerIcon": "icons/icon.ico",
+        "uninstallerIcon": "icons/icon.ico"
+      }
+    },
     "android": {
       "debugApplicationIdSuffix": ".debug"
     }
