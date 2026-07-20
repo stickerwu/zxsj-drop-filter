@@ -10,6 +10,8 @@
     "test:watch": "vitest",
     "lint": "eslint .",
     "preview": "vite preview",
+    "release:gitee:prepare": "node scripts/release/publish-gitee-release.mjs prepare",
+    "release:gitee:publish": "node scripts/release/publish-gitee-release.mjs publish",
     "release:manifest": "node scripts/release/prepare-artifacts.mjs manifest",
     "release:prepare": "node scripts/release/prepare-artifacts.mjs prepare",
     "release:validate": "node scripts/release/validate-release.mjs",
