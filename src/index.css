@@ -368,6 +368,56 @@ select:focus-visible {
   background: color-mix(in srgb, var(--app-accent) 88%, black) !important;
 }
 
+.inventory-scan-modal [data-slot="modal-close-trigger"] {
+  color: var(--app-text-muted) !important;
+  opacity: 1 !important;
+}
+
+.inventory-scan-modal [data-slot="modal-close-trigger"]:hover {
+  background: var(--app-control) !important;
+  color: var(--app-text) !important;
+}
+
+.inventory-scan-select [data-slot="select-trigger"] {
+  opacity: 1 !important;
+}
+
+.inventory-scan-select [data-slot="select-value"],
+.inventory-scan-select [data-slot="select-indicator"] {
+  color: var(--app-text) !important;
+  opacity: 1 !important;
+}
+
+.inventory-scan-input {
+  height: 38px !important;
+  border: 1px solid var(--app-border) !important;
+  border-radius: 6px !important;
+  background: var(--app-surface) !important;
+  color: var(--app-text) !important;
+  box-shadow: none !important;
+}
+
+.inventory-scan-input::placeholder {
+  color: var(--app-text-muted) !important;
+  opacity: 0.75 !important;
+}
+
+.inventory-scan-tabs [data-slot="tabs-tab"] {
+  color: var(--app-text-muted) !important;
+  opacity: 1 !important;
+}
+
+.inventory-scan-tabs [data-slot="tabs-tab"][data-selected="true"] {
+  background: var(--app-surface) !important;
+  color: var(--app-accent) !important;
+  font-weight: 600 !important;
+  box-shadow: 0 2px 7px color-mix(in srgb, black 9%, transparent) !important;
+}
+
+.inventory-scan-tabs [data-slot="tabs-indicator"] {
+  display: none !important;
+}
+
 @keyframes tab-enter {
   from {
     opacity: 0;

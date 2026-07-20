@@ -140,6 +140,17 @@ fn completed_tab_requires_all_reported_items() {
 }
 
 #[test]
+fn inventory_snapshot_uses_zulu_iso_datetime() {
+  let snapshot = InventorySession::default().snapshot();
+
+  assert!(
+    snapshot.captured_at.ends_with('Z'),
+    "frontend datetime validation requires a Zulu timestamp, got {}",
+    snapshot.captured_at,
+  );
+}
+
+#[test]
 fn game_window_filter_requires_the_shipping_process_and_game_title() {
   let candidates = vec![
     GameWindowCandidate {
@@ -160,12 +171,19 @@ fn game_window_filter_requires_the_shipping_process_and_game_title() {
       title: "Unreal Crash Reporter".into(),
       minimized: false,
     },
+    GameWindowCandidate {
+      window_id: "4".into(),
+      process_name: "ZhuxianClient-Win64-Shipping".into(),
+      title: "诛仙世界  ".into(),
+      minimized: false,
+    },
   ];
 
   let matches = filter_game_windows(candidates);
 
-  assert_eq!(matches.len(), 1);
+  assert_eq!(matches.len(), 2);
   assert_eq!(matches[0].window_id, "1");
+  assert_eq!(matches[1].window_id, "4");
 }
 
 #[test]

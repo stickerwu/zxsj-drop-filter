@@ -1,12 +1,27 @@
 import { useCallback, useEffect, useMemo, useState } from "react"
-import { Button, Chip, Modal } from "@heroui/react"
+import {
+  Button,
+  Chip,
+  Input,
+  ListBox,
+  Modal,
+  NumberField,
+  Select,
+  Surface,
+  Switch,
+  Tabs,
+} from "@heroui/react"
 import {
   AlertTriangle,
   Check,
+  CheckCircle2,
   Gamepad2,
   Keyboard,
+  Minus,
   Plus,
+  RefreshCw,
   ScanLine,
+  ShieldCheck,
   Trash2,
   Volume2,
   VolumeX,
@@ -40,6 +55,233 @@ const shapeLabels: Record<ScannedStoneShape, string> = {
   unknown: "待确认",
 }
 
+const ordinaryShapeOptions = [
+  "square",
+  "l",
+  "t",
+  "line",
+  "j",
+  "unknown",
+] as const
+
+function ScannerSelect({
+  label,
+  value,
+  options,
+  onChange,
+}: {
+  label: string
+  value: string
+  options: Array<{ id: string; label: string }>
+  onChange: (value: string) => void
+}) {
+  return (
+    <Select
+      aria-label={label}
+      className="inventory-scan-select"
+      fullWidth
+      selectedKey={value || null}
+      onSelectionChange={(key) => {
+        if (key !== null) onChange(String(key))
+      }}
+    >
+      <Select.Trigger className="h-10 min-h-10 rounded-md border border-[var(--app-border)] bg-[var(--app-surface)] text-[var(--app-text)] shadow-sm">
+        <Select.Value />
+        <Select.Indicator />
+      </Select.Trigger>
+      <Select.Popover className="max-h-72 min-w-[var(--trigger-width)] border border-[var(--app-border)] bg-[var(--app-surface)]">
+        <ListBox aria-label={label}>
+          {options.map((option) => (
+            <ListBox.Item key={option.id} id={option.id} textValue={option.label}>
+              <span className="flex w-full items-center justify-between gap-3">
+                <span className="truncate">{option.label}</span>
+                <ListBox.ItemIndicator>
+                  {({ isSelected }) =>
+                    isSelected
+                      ? <Check className="size-3.5 text-[var(--app-accent)]" />
+                      : null
+                  }
+                </ListBox.ItemIndicator>
+              </span>
+            </ListBox.Item>
+          ))}
+        </ListBox>
+      </Select.Popover>
+    </Select>
+  )
+}
+
+function ReportedCountField({
+  label,
+  value,
+  onChange,
+}: {
+  label: string
+  value: number | null
+  onChange: (value: number | null) => void
+}) {
+  return (
+    <NumberField
+      aria-label={label}
+      className="w-[104px]"
+      maxValue={999}
+      minValue={0}
+      value={value ?? undefined}
+      onChange={(nextValue) =>
+        onChange(Number.isFinite(nextValue) ? nextValue : null)}
+    >
+      <NumberField.Group className="flex h-9 rounded-md border border-[var(--app-border)] bg-[var(--app-surface)] shadow-sm">
+        <NumberField.DecrementButton
+          aria-label={`减少${label}`}
+          className="flex w-7 items-center justify-center text-[var(--app-text-muted)] hover:bg-[var(--app-control)]"
+        >
+          <Minus className="size-3" />
+        </NumberField.DecrementButton>
+        <NumberField.Input className="min-w-0 flex-1 border-x border-[var(--app-border)] bg-transparent px-0 text-center text-sm font-semibold text-[var(--app-text)] outline-none" />
+        <NumberField.IncrementButton
+          aria-label={`增加${label}`}
+          className="flex w-7 items-center justify-center text-[var(--app-text-muted)] hover:bg-[var(--app-control)]"
+        >
+          <Plus className="size-3" />
+        </NumberField.IncrementButton>
+      </NumberField.Group>
+    </NumberField>
+  )
+}
+
+function ScanItemCard({
+  item,
+  index,
+  onUpdate,
+  onDelete,
+}: {
+  item: ScannedStone
+  index: number
+  onUpdate: (patch: Partial<ScannedStone>) => void
+  onDelete: () => void
+}) {
+  const lowConfidence = item.confidence < 0.8 && !item.confirmed
+  const shapeOptions = item.category === "craft"
+    ? ["craft", "unknown"] as const
+    : ordinaryShapeOptions
+  const fieldClass = lowConfidence
+    ? "inventory-scan-input border-amber-400/80 bg-amber-50/70 dark:bg-amber-950/20"
+    : "inventory-scan-input"
+
+  return (
+    <Surface
+      className="rounded-md border border-[var(--app-border)] bg-[var(--app-surface)] p-3 shadow-[0_5px_16px_rgba(31,45,61,0.07)] dark:shadow-[0_7px_20px_rgba(0,0,0,0.24)]"
+      data-confidence={lowConfidence ? "low" : "ok"}
+    >
+      <div className="flex items-center gap-3">
+        <span className="flex size-8 shrink-0 items-center justify-center rounded-md bg-[var(--app-accent-soft)] text-xs font-bold text-[var(--app-accent)]">
+          {index + 1}
+        </span>
+        <div className="w-36 shrink-0">
+          <ScannerSelect
+            label={`第 ${index + 1} 项形状`}
+            value={item.shape}
+            options={shapeOptions.map((shape) => ({
+              id: shape,
+              label: shapeLabels[shape],
+            }))}
+            onChange={(shape) =>
+              onUpdate({
+                shape: shape as ScannedStoneShape,
+                confirmed: true,
+              })}
+          />
+        </div>
+        <div className="min-w-0 flex-1">
+          <p className="truncate text-[13px] font-semibold text-[var(--app-text)]">
+            {item.elementRaw || "未识别五行"} · {item.qualityRaw || "未识别品质"}
+          </p>
+          <p className="mt-0.5 truncate text-[11px] text-[var(--app-text-muted)]">
+            {item.marks.length > 0 ? item.marks.join(" · ") : "暂无标记"}
+          </p>
+        </div>
+        <Chip
+          className={lowConfidence
+            ? "border border-amber-400/60 bg-amber-50 text-amber-700 dark:bg-amber-950/30 dark:text-amber-300"
+            : ""}
+          size="sm"
+          variant="soft"
+        >
+          {Math.round(item.confidence * 100)}%
+        </Chip>
+        <Button
+          className={item.confirmed
+            ? "h-8 rounded-md bg-emerald-50 px-2.5 text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-300"
+            : "h-8 rounded-md px-2.5"}
+          size="sm"
+          variant={item.confirmed ? "secondary" : "outline"}
+          onPress={() => onUpdate({ confirmed: !item.confirmed })}
+        >
+          <CheckCircle2 className="size-3.5" />
+          {item.confirmed ? "已核对" : "确认"}
+        </Button>
+        <Button
+          aria-label={`删除第 ${index + 1} 项`}
+          className="editor-delete-button size-8 min-w-8 rounded-md"
+          isIconOnly
+          size="sm"
+          variant="ghost"
+          onPress={onDelete}
+        >
+          <Trash2 className="size-3.5" />
+        </Button>
+      </div>
+
+      <div className="mt-3 grid grid-cols-[96px_96px_minmax(0,1fr)_minmax(0,1fr)] gap-2">
+        <Input
+          aria-label={`第 ${index + 1} 项五行`}
+          className={fieldClass}
+          placeholder="五行"
+          value={item.elementRaw ?? ""}
+          onChange={(event) =>
+            onUpdate({ elementRaw: event.target.value, confirmed: true })}
+        />
+        <Input
+          aria-label={`第 ${index + 1} 项品质`}
+          className={fieldClass}
+          placeholder="品质"
+          value={item.qualityRaw ?? ""}
+          onChange={(event) =>
+            onUpdate({ qualityRaw: event.target.value, confirmed: true })}
+        />
+        <Input
+          aria-label={`第 ${index + 1} 项主属性`}
+          className={`${fieldClass} text-xs`}
+          placeholder="主属性，顿号分隔"
+          value={item.primaryAttributes.map((field) => field.raw).join("、")}
+          onChange={(event) =>
+            onUpdate({
+              primaryAttributes: event.target.value
+                .split("、")
+                .filter(Boolean)
+                .map((raw) => ({ raw, confidence: 1 })),
+              confirmed: true,
+            })}
+        />
+        <Input
+          aria-label={`第 ${index + 1} 项灵蕴`}
+          className={`${fieldClass} text-xs`}
+          placeholder="灵蕴，顿号分隔"
+          value={item.spiritAttributes.map((field) => field.raw).join("、")}
+          onChange={(event) =>
+            onUpdate({
+              spiritAttributes: event.target.value
+                .split("、")
+                .filter(Boolean)
+                .map((raw) => ({ raw, confidence: 1 })),
+              confirmed: true,
+            })}
+        />
+      </div>
+    </Surface>
+  )
+}
+
 export function InventoryScanModal({
   open,
   onOpenChange,
@@ -55,18 +297,56 @@ export function InventoryScanModal({
   const [snapshot, setSnapshot] = useState(createEmptyInventorySnapshot)
   const [selectedTab, setSelectedTab] = useState<"normal" | "craft">("normal")
   const [busy, setBusy] = useState(false)
+  const [loadingWindows, setLoadingWindows] = useState(true)
   const [muted, setMuted] = useState(false)
   const completeness = useMemo(() => scanCompleteness(snapshot), [snapshot])
   const counts = useMemo(() => inventoryCounts(snapshot), [snapshot])
+  const selectedWindow = windows.find((window) => window.windowId === windowId)
+
+  const refreshWindows = useCallback(async (notify = false) => {
+    setLoadingWindows(true)
+    try {
+      const found = await client.listWindows()
+      setWindows(found)
+      setWindowId((current) => {
+        if (found.some((window) => window.windowId === current)) return current
+        return found.length === 1 ? found[0].windowId : ""
+      })
+      if (notify) {
+        if (found.length === 0) toast.warning("仍未检测到诛仙世界游戏窗口")
+        else toast.success(`已检测到 ${found.length} 个游戏窗口`)
+      }
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : String(error))
+    } finally {
+      setLoadingWindows(false)
+    }
+  }, [client])
 
   useEffect(() => {
     if (!open) return
-    void Promise.all([client.listWindows(), client.load()]).then(([found, saved]) => {
-      setWindows(found)
-      setWindowId(found.length === 1 ? found[0].windowId : "")
-      if (saved) setSnapshot(parseInventorySnapshot(saved))
-    }).catch((error) => toast.error(String(error)))
+    let active = true
+    void Promise.all([client.listWindows(), client.load()])
+      .then(([found, saved]) => {
+        if (!active) return
+        setWindows(found)
+        setWindowId(found.length === 1 ? found[0].windowId : "")
+        if (saved) setSnapshot(parseInventorySnapshot(saved))
+      })
+      .catch((error) => toast.error(String(error)))
+      .finally(() => {
+        if (active) setLoadingWindows(false)
+      })
+    return () => {
+      active = false
+    }
   }, [client, open])
+
+  useEffect(() => {
+    if (!open || loadingWindows || sessionId || windows.length > 0) return
+    const timer = window.setInterval(() => void refreshWindows(), 3000)
+    return () => window.clearInterval(timer)
+  }, [loadingWindows, open, refreshWindows, sessionId, windows.length])
 
   const capture = useCallback(async (id: string) => {
     if (busy || id !== sessionId) return
@@ -74,7 +354,9 @@ export function InventoryScanModal({
     try {
       const next = parseInventorySnapshot(await client.capture(id))
       setSnapshot(next)
-      setSelectedTab(next.craft.items.length > snapshot.craft.items.length ? "craft" : "normal")
+      setSelectedTab(
+        next.craft.items.length > snapshot.craft.items.length ? "craft" : "normal",
+      )
       toast.success("当前库存页已识别")
     } catch (error) {
       toast.error(error instanceof Error ? error.message : String(error))
@@ -112,15 +394,21 @@ export function InventoryScanModal({
 
   const updateTab = (
     tab: "normal" | "craft",
-    update: (current: TianGongInventorySnapshotV1[typeof tab]) => TianGongInventorySnapshotV1[typeof tab],
+    update: (
+      current: TianGongInventorySnapshotV1[typeof tab],
+    ) => TianGongInventorySnapshotV1[typeof tab],
   ) => setSnapshot((current) => ({ ...current, [tab]: update(current[tab]) }))
 
-  const updateItem = (index: number, patch: Partial<ScannedStone>) =>
-    updateTab(selectedTab, (tab) => ({
-      ...tab,
-      items: tab.items.map((item, itemIndex) =>
+  const updateItem = (
+    tab: "normal" | "craft",
+    index: number,
+    patch: Partial<ScannedStone>,
+  ) =>
+    updateTab(tab, (current) => ({
+      ...current,
+      items: current.items.map((item, itemIndex) =>
         itemIndex === index ? { ...item, ...patch } : item),
-      completed: tab.reportedCount === tab.items.length,
+      completed: current.reportedCount === current.items.length,
     }))
 
   const addItem = () => updateTab(selectedTab, (tab) => {
@@ -150,115 +438,363 @@ export function InventoryScanModal({
     onOpenChange(false)
   }
 
-  const items = snapshot[selectedTab].items
+  const windowOptions = windows.map((window) => ({
+    id: window.windowId,
+    label: `${window.title.trim()}${window.minimized ? "（已最小化）" : ""}`,
+  }))
+
+  const renderItems = (tab: "normal" | "craft") => {
+    const items = snapshot[tab].items
+    if (items.length === 0) {
+      return (
+        <div className="flex h-full min-h-72 flex-col items-center justify-center px-8 text-center">
+          <span className="flex size-14 items-center justify-center rounded-lg bg-[var(--app-accent-soft)] text-[var(--app-accent)]">
+            <ScanLine className="size-7" />
+          </span>
+          <p className="mt-4 text-sm font-semibold text-[var(--app-text)]">
+            尚未采集{tab === "normal" ? "机巧石" : "匠心石"}页签
+          </p>
+          <p className="mt-1 max-w-sm text-xs leading-5 text-[var(--app-text-muted)]">
+            在游戏中打开对应页签，手动滚动并保留至少一行重叠，然后按 Ctrl+Shift+F8。
+          </p>
+        </div>
+      )
+    }
+
+    return (
+      <div className="grid gap-2.5 p-3">
+        {items.map((item, index) => (
+          <ScanItemCard
+            key={item.id}
+            index={index}
+            item={item}
+            onDelete={() =>
+              updateTab(tab, (current) => ({
+                ...current,
+                items: current.items.filter((_, itemIndex) => itemIndex !== index),
+                completed: false,
+              }))}
+            onUpdate={(patch) => updateItem(tab, index, patch)}
+          />
+        ))}
+      </div>
+    )
+  }
 
   return (
     <Modal isOpen={open} onOpenChange={onOpenChange}>
       <Modal.Trigger aria-hidden className="hidden" />
       <Modal.Backdrop variant="blur">
         <Modal.Container placement="center">
-          <Modal.Dialog className="h-[min(760px,calc(100vh-40px))] w-[min(1320px,calc(100vw-40px))] max-w-none overflow-hidden rounded-lg bg-[var(--app-surface)] text-[var(--app-text)] shadow-2xl">
-            <Modal.Header className="flex h-[72px] items-center gap-3 border-b px-5 py-0">
+          <Modal.Dialog
+            className="inventory-scan-modal flex h-[min(780px,calc(100vh-24px))] w-[min(1360px,calc(100vw-24px))] max-w-none flex-col overflow-hidden rounded-lg border border-[var(--app-border)] bg-[var(--app-surface)] text-[var(--app-text)] shadow-[0_24px_70px_rgba(15,23,42,0.28)] dark:shadow-[0_28px_80px_rgba(0,0,0,0.58)]"
+            data-testid="inventory-scan-modal"
+          >
+            <Modal.Header className="relative flex h-[76px] shrink-0 items-center gap-3 border-b border-[var(--app-border)] bg-[var(--app-surface)] px-6 py-0">
               <span className="flex size-10 items-center justify-center rounded-md bg-[var(--app-accent-soft)] text-[var(--app-accent)]">
                 <ScanLine className="size-5" />
               </span>
-              <div className="flex-1">
-                <Modal.Heading className="text-lg font-semibold">游戏库存扫描核对</Modal.Heading>
-                <p className="text-xs text-[var(--app-text-muted)]">窗口捕获与本地 OCR，不读取游戏内存，不发送输入</p>
+              <div className="min-w-0 flex-1">
+                <Modal.Heading className="text-lg font-semibold text-[var(--app-text)]">
+                  游戏库存扫描核对
+                </Modal.Heading>
+                <p className="mt-1 text-xs text-[var(--app-text-muted)]">
+                  仅窗口捕获与本地 OCR，不读取游戏内存，不向游戏发送输入
+                </p>
               </div>
-              <Chip size="sm" variant={sessionId ? "primary" : "soft"}>{sessionId ? "扫描中" : "未开始"}</Chip>
-              <Modal.CloseTrigger />
+              <Chip
+                className={sessionId
+                  ? "bg-[var(--app-accent-soft)] text-[var(--app-accent)]"
+                  : "bg-[var(--app-control)] text-[var(--app-text-muted)]"}
+                size="sm"
+                variant="soft"
+              >
+                {sessionId ? "扫描会话进行中" : "等待开始"}
+              </Chip>
+              <Modal.CloseTrigger aria-label="关闭库存扫描" />
             </Modal.Header>
-            <Modal.Body className="min-h-0 flex-1 p-0">
-              <div className="grid h-full grid-cols-[260px_minmax(0,1fr)_280px]">
-                <aside className="border-r bg-[var(--app-surface-muted)] p-4">
-                  <h2 className="flex items-center gap-2 text-sm font-semibold"><Gamepad2 className="size-4" />游戏窗口</h2>
-                  <select className="mt-3 h-10 w-full rounded-md border bg-[var(--app-surface)] px-3 text-sm" value={windowId} onChange={(event) => setWindowId(event.target.value)}>
-                    <option value="">请选择游戏窗口</option>
-                    {windows.map((window) => <option key={window.windowId} value={window.windowId}>{window.title}</option>)}
-                  </select>
-                  {windows.length === 0 && <p className="mt-2 text-xs text-amber-600">未找到运行中的游戏客户端</p>}
-                  <div className="mt-5 rounded-md border bg-[var(--app-surface)] p-3">
-                    <p className="flex items-center gap-2 text-sm font-semibold"><Keyboard className="size-4" />Ctrl+Shift+F8</p>
-                    <p className="mt-1 text-xs leading-5 text-[var(--app-text-muted)]">手动滚动并保留至少一行重叠，再按热键采集。</p>
+
+            <Modal.Body className="min-h-0 flex-1 overflow-hidden bg-[var(--app-bg)] p-3">
+              <div className="grid h-full min-h-0 grid-cols-[278px_minmax(0,1fr)_270px] overflow-hidden rounded-lg border border-[var(--app-border)] bg-[var(--app-surface)] shadow-[0_10px_30px_rgba(31,45,61,0.10)] dark:shadow-[0_14px_36px_rgba(0,0,0,0.32)]">
+                <aside className="min-h-0 overflow-y-auto border-r border-[var(--app-border)] bg-[var(--app-surface)] p-4">
+                  <Surface className="rounded-md border border-[color-mix(in_srgb,var(--app-accent)_35%,var(--app-border))] bg-[var(--app-accent-soft)] p-3.5">
+                    <div className="flex items-start gap-3">
+                      <span className="mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-md bg-[var(--app-surface)] text-[var(--app-accent)] shadow-sm">
+                        <Gamepad2 className="size-4" />
+                      </span>
+                      <div>
+                        <p className="text-[13px] font-semibold text-[var(--app-text)]">
+                          请打开个人游戏角色的天工机巧盘页面
+                        </p>
+                        <p className="mt-1 text-[11px] leading-5 text-[var(--app-text-muted)]">
+                          进入机巧石库存，并确保页签、库存数量和卡片列表完整可见。
+                        </p>
+                      </div>
+                    </div>
+                  </Surface>
+
+                  <div className="mt-4 flex items-center justify-between">
+                    <h2 className="text-[13px] font-semibold text-[var(--app-text)]">
+                      游戏窗口
+                    </h2>
+                    <Button
+                      aria-label="刷新游戏窗口"
+                      className="size-8 min-w-8 rounded-md"
+                      isDisabled={!!sessionId}
+                      isIconOnly
+                      size="sm"
+                      variant="ghost"
+                      onPress={() => void refreshWindows(true)}
+                    >
+                      <RefreshCw className={`size-4 ${loadingWindows ? "animate-spin" : ""}`} />
+                    </Button>
                   </div>
-                  <Button className="mt-4 w-full" isDisabled={busy || !!sessionId || !windowId} variant="primary" onPress={() => void start()}>
-                    <ScanLine className="size-4" />开启扫描
+                  <div className="mt-2">
+                    <ScannerSelect
+                      label="游戏窗口"
+                      options={windowOptions}
+                      value={windowId}
+                      onChange={setWindowId}
+                    />
+                  </div>
+                  {windows.length === 0 && (
+                    <div className="mt-2 flex gap-2 rounded-md border border-amber-400/50 bg-amber-50 px-3 py-2.5 text-[11px] leading-5 text-amber-800 dark:bg-amber-950/25 dark:text-amber-300">
+                      <AlertTriangle className="mt-0.5 size-4 shrink-0" />
+                      <span>未检测到游戏窗口，程序会每 3 秒自动重试，也可以点击刷新。</span>
+                    </div>
+                  )}
+                  {selectedWindow?.minimized && (
+                    <p className="mt-2 text-[11px] leading-5 text-amber-700 dark:text-amber-300">
+                      游戏窗口已最小化，请先恢复窗口再开始扫描。
+                    </p>
+                  )}
+
+                  <Surface className="mt-4 rounded-md border border-[var(--app-border)] bg-[var(--app-surface-muted)] p-3">
+                    <p className="flex items-center gap-2 text-[13px] font-semibold text-[var(--app-text)]">
+                      <Keyboard className="size-4 text-[var(--app-accent)]" />
+                      Ctrl+Shift+F8
+                    </p>
+                    <p className="mt-1 text-[11px] leading-5 text-[var(--app-text-muted)]">
+                      每次手动滚动后保留至少一行重叠，再按热键采集当前页面。
+                    </p>
+                  </Surface>
+
+                  <Button
+                    className="editor-save-button mt-4 h-10 w-full rounded-md font-semibold"
+                    isDisabled={
+                      busy ||
+                      !!sessionId ||
+                      !windowId ||
+                      selectedWindow?.minimized === true
+                    }
+                    variant="primary"
+                    onPress={() => void start()}
+                  >
+                    <ScanLine className="size-4" />
+                    开启扫描
                   </Button>
-                  <Button className="mt-2 w-full" isDisabled={!sessionId || busy} variant="outline" onPress={() => sessionId && void capture(sessionId)}>
-                    {busy ? "正在识别…" : "采集当前页"}
+                  <Button
+                    className="mt-2 h-10 w-full rounded-md"
+                    isDisabled={!sessionId || busy}
+                    variant="outline"
+                    onPress={() => sessionId && void capture(sessionId)}
+                  >
+                    {busy
+                      ? <RefreshCw className="size-4 animate-spin" />
+                      : <ScanLine className="size-4" />}
+                    {busy ? "正在识别" : "采集当前页"}
                   </Button>
-                  <Button className="mt-2 w-full" variant="ghost" onPress={() => setMuted((value) => !value)}>
-                    {muted ? <VolumeX className="size-4" /> : <Volume2 className="size-4" />}{muted ? "已静音" : "提示音开启"}
-                  </Button>
-                  <div className="mt-4 grid gap-2">
-                    {(["normal", "craft"] as const).map((tab) => (
-                      <label key={tab} className="flex items-center justify-between gap-2 text-xs">
-                        <span>{tab === "normal" ? "机巧石总数" : "匠心石总数"}</span>
-                        <input
-                          aria-label={tab === "normal" ? "机巧石总数" : "匠心石总数"}
-                          className="h-8 w-20 rounded-md border bg-[var(--app-surface)] px-2 text-right"
-                          max={999}
-                          min={0}
-                          type="number"
-                          value={snapshot[tab].reportedCount ?? ""}
-                          onChange={(event) => updateTab(tab, (current) => {
-                            const reportedCount = event.target.value === "" ? null : Number(event.target.value)
-                            return { ...current, reportedCount, completed: reportedCount === current.items.length }
-                          })}
-                        />
-                      </label>
-                    ))}
+
+                  <Switch
+                    aria-label="扫描提示音"
+                    className="mt-3 w-full rounded-md border border-[var(--app-border)] bg-[var(--app-surface-muted)] p-3"
+                    isSelected={!muted}
+                    onChange={(enabled) => setMuted(!enabled)}
+                  >
+                    <Switch.Content className="flex w-full items-center gap-2 text-[12px] font-medium text-[var(--app-text)]">
+                      {muted
+                        ? <VolumeX className="size-4 text-[var(--app-text-muted)]" />
+                        : <Volume2 className="size-4 text-[var(--app-accent)]" />}
+                      <span className="flex-1">扫描提示音</span>
+                      <Switch.Control>
+                        <Switch.Thumb />
+                      </Switch.Control>
+                    </Switch.Content>
+                  </Switch>
+
+                  <div className="mt-4 space-y-2">
+                    {(["normal", "craft"] as const).map((tab) => {
+                      const label = tab === "normal" ? "机巧石总数" : "匠心石总数"
+                      return (
+                        <div
+                          key={tab}
+                          className="flex items-center justify-between rounded-md border border-[var(--app-border)] bg-[var(--app-surface-muted)] px-3 py-2"
+                        >
+                          <div>
+                            <p className="text-[12px] font-medium text-[var(--app-text)]">
+                              {label}
+                            </p>
+                            <p className="mt-0.5 text-[10px] text-[var(--app-text-muted)]">
+                              已采集 {snapshot[tab].items.length}
+                            </p>
+                          </div>
+                          <ReportedCountField
+                            label={label}
+                            value={snapshot[tab].reportedCount}
+                            onChange={(reportedCount) =>
+                              updateTab(tab, (current) => ({
+                                ...current,
+                                reportedCount,
+                                completed: reportedCount === current.items.length,
+                              }))}
+                          />
+                        </div>
+                      )
+                    })}
                   </div>
                 </aside>
-                <main className="min-w-0 overflow-hidden">
-                  <div className="flex h-14 items-center justify-between border-b px-4">
-                    <div className="flex gap-2">
-                      {(["normal", "craft"] as const).map((tab) => (
-                        <Button key={tab} size="sm" variant={selectedTab === tab ? "primary" : "ghost"} onPress={() => setSelectedTab(tab)}>
-                          {tab === "normal" ? "机巧石" : "匠心石"} {snapshot[tab].items.length}/{snapshot[tab].reportedCount ?? "?"}
-                        </Button>
-                      ))}
+
+                <main className="min-w-0 overflow-hidden bg-[var(--app-surface-muted)]">
+                  <Tabs
+                    className="inventory-scan-tabs flex h-full min-h-0 flex-col"
+                    selectedKey={selectedTab}
+                    variant="secondary"
+                    onSelectionChange={(key) =>
+                      setSelectedTab(String(key) as "normal" | "craft")}
+                  >
+                    <Tabs.ListContainer className="flex h-16 shrink-0 items-center justify-between border-b border-[var(--app-border)] bg-[var(--app-surface)] px-4">
+                      <Tabs.List
+                        aria-label="库存页签"
+                        className="grid w-[330px] grid-cols-2 rounded-md bg-[var(--app-control)] p-1"
+                      >
+                        {(["normal", "craft"] as const).map((tab) => (
+                          <Tabs.Tab
+                            key={tab}
+                            className="h-9 justify-center gap-2 rounded-[5px] text-[12px]"
+                            id={tab}
+                          >
+                            <span>{tab === "normal" ? "机巧石" : "匠心石"}</span>
+                            <Chip size="sm" variant="soft">
+                              {snapshot[tab].items.length}/{snapshot[tab].reportedCount ?? "?"}
+                            </Chip>
+                            <Tabs.Indicator />
+                          </Tabs.Tab>
+                        ))}
+                      </Tabs.List>
+                      <Button
+                        className="h-9 rounded-md"
+                        size="sm"
+                        variant="outline"
+                        onPress={addItem}
+                      >
+                        <Plus className="size-3.5" />
+                        手动新增
+                      </Button>
+                    </Tabs.ListContainer>
+                    <Tabs.Panel
+                      className="m-0 min-h-0 flex-1 overflow-y-auto p-0"
+                      id="normal"
+                    >
+                      {renderItems("normal")}
+                    </Tabs.Panel>
+                    <Tabs.Panel
+                      className="m-0 min-h-0 flex-1 overflow-y-auto p-0"
+                      id="craft"
+                    >
+                      {renderItems("craft")}
+                    </Tabs.Panel>
+                  </Tabs>
+                </main>
+
+                <aside className="min-h-0 overflow-y-auto border-l border-[var(--app-border)] bg-[var(--app-surface)] p-4">
+                  <div className="flex items-center gap-2">
+                    <span className="flex size-8 items-center justify-center rounded-md bg-[var(--app-accent-soft)] text-[var(--app-accent)]">
+                      <ShieldCheck className="size-4" />
+                    </span>
+                    <div>
+                      <h2 className="text-[13px] font-semibold text-[var(--app-text)]">
+                        库存汇总
+                      </h2>
+                      <p className="text-[10px] text-[var(--app-text-muted)]">
+                        应用前必须完成两页核对
+                      </p>
                     </div>
-                    <Button size="sm" variant="outline" onPress={addItem}><Plus className="size-3.5" />手动新增</Button>
                   </div>
-                  <div className="h-[calc(100%-56px)] overflow-y-auto p-3">
-                    {items.length === 0 ? <div className="flex h-full items-center justify-center text-sm text-[var(--app-text-muted)]">尚未采集当前页签</div> : items.map((item, index) => (
-                      <div key={item.id} className="mb-2 grid grid-cols-[112px_70px_70px_minmax(100px,1fr)_minmax(100px,1fr)_64px_36px] items-center gap-2 rounded-md border bg-[var(--app-surface)] p-2 shadow-sm">
-                        <select className="h-9 rounded-md border bg-transparent px-2" value={item.shape} onChange={(event) => updateItem(index, { shape: event.target.value as ScannedStoneShape, confirmed: true })}>
-                          {Object.entries(shapeLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
-                        </select>
-                        <input className="h-9 rounded-md border bg-transparent px-2" placeholder="五行" value={item.elementRaw ?? ""} onChange={(event) => updateItem(index, { elementRaw: event.target.value, confirmed: true })} />
-                        <input className="h-9 rounded-md border bg-transparent px-2" placeholder="品质" value={item.qualityRaw ?? ""} onChange={(event) => updateItem(index, { qualityRaw: event.target.value, confirmed: true })} />
-                        <input className="h-9 min-w-0 rounded-md border bg-transparent px-2 text-xs" placeholder="主属性，顿号分隔" value={item.primaryAttributes.map((field) => field.raw).join("、")} onChange={(event) => updateItem(index, { primaryAttributes: event.target.value.split("、").filter(Boolean).map((raw) => ({ raw, confidence: 1 })), confirmed: true })} />
-                        <input className="h-9 min-w-0 rounded-md border bg-transparent px-2 text-xs" placeholder="灵蕴，顿号分隔" value={item.spiritAttributes.map((field) => field.raw).join("、")} onChange={(event) => updateItem(index, { spiritAttributes: event.target.value.split("、").filter(Boolean).map((raw) => ({ raw, confidence: 1 })), confirmed: true })} />
-                        <Chip
-                          className={item.confidence < 0.8 && !item.confirmed ? "text-red-600 dark:text-red-400" : ""}
-                          size="sm"
-                          variant="soft"
-                        >
-                          {Math.round(item.confidence * 100)}%
-                        </Chip>
-                        <Button aria-label="删除条目" isIconOnly size="sm" variant="ghost" onPress={() => updateTab(selectedTab, (tab) => ({ ...tab, items: tab.items.filter((_, itemIndex) => itemIndex !== index), completed: false }))}><Trash2 className="size-4 text-red-500" /></Button>
+
+                  <div className="mt-4 space-y-2">
+                    {Object.entries(counts).map(([shape, count]) => (
+                      <div
+                        key={shape}
+                        className="flex h-11 items-center justify-between rounded-md border border-[var(--app-border)] bg-[var(--app-surface-muted)] px-3 text-[13px] shadow-sm"
+                      >
+                        <span className="text-[var(--app-text-muted)]">
+                          {shapeLabels[shape as ScannedStoneShape]}
+                        </span>
+                        <strong className="text-base text-[var(--app-text)]">{count}</strong>
                       </div>
                     ))}
+                    <div className="flex h-11 items-center justify-between rounded-md border border-[color-mix(in_srgb,#d6b85f_48%,var(--app-border))] bg-[color-mix(in_srgb,#d6b85f_9%,var(--app-surface))] px-3 text-[13px] shadow-sm">
+                      <span className="text-[var(--app-text-muted)]">匠心石</span>
+                      <strong className="text-base text-[var(--app-text)]">
+                        {snapshot.craft.items.length}
+                      </strong>
+                    </div>
                   </div>
-                </main>
-                <aside className="border-l bg-[var(--app-surface-muted)] p-4">
-                  <h2 className="text-sm font-semibold">库存汇总</h2>
-                  <div className="mt-3 space-y-2">
-                    {Object.entries(counts).map(([shape, count]) => <div key={shape} className="flex items-center justify-between rounded-md border bg-[var(--app-surface)] px-3 py-2 text-sm"><span>{shapeLabels[shape as ScannedStoneShape]}</span><strong>{count}</strong></div>)}
-                    <div className="flex items-center justify-between rounded-md border bg-[var(--app-surface)] px-3 py-2 text-sm"><span>匠心石</span><strong>{snapshot.craft.items.length}</strong></div>
-                  </div>
-                  <div className={`mt-4 rounded-md border p-3 text-xs leading-5 ${completeness.canApply ? "text-emerald-600" : "text-amber-600"}`}>
-                    {completeness.canApply ? <><Check className="mr-1 inline size-4" />清单完整，可以应用</> : <><AlertTriangle className="mr-1 inline size-4" />仍有 {completeness.unresolvedItems} 个低置信度、{completeness.unknownShapes} 个未知形状，或页签数量未核对</>}
+
+                  <Surface
+                    className={`mt-4 rounded-md border p-3 text-[11px] leading-5 ${
+                      completeness.canApply
+                        ? "border-emerald-400/50 bg-emerald-50 text-emerald-700 dark:bg-emerald-950/25 dark:text-emerald-300"
+                        : "border-amber-400/50 bg-amber-50 text-amber-800 dark:bg-amber-950/25 dark:text-amber-300"
+                    }`}
+                  >
+                    {completeness.canApply
+                      ? (
+                        <div className="flex gap-2">
+                          <CheckCircle2 className="mt-0.5 size-4 shrink-0" />
+                          <span>两页清单完整且已核对，可以应用库存。</span>
+                        </div>
+                      )
+                      : (
+                        <div className="flex gap-2">
+                          <AlertTriangle className="mt-0.5 size-4 shrink-0" />
+                          <span>
+                            低置信度 {completeness.unresolvedItems} 项，未知形状 {completeness.unknownShapes} 项；
+                            {completeness.countMismatch ? "库存数量不一致。" : "请完成两页数量核对。"}
+                          </span>
+                        </div>
+                      )}
+                  </Surface>
+
+                  <div className="mt-4 rounded-md border border-[var(--app-border)] bg-[var(--app-surface-muted)] p-3 text-[11px] leading-5 text-[var(--app-text-muted)]">
+                    原始截图和卡片裁剪只保存在当前进程内存中，确认、取消或退出后立即释放。
                   </div>
                 </aside>
               </div>
             </Modal.Body>
-            <Modal.Footer className="flex h-16 items-center justify-end gap-2 border-t bg-[var(--app-surface-muted)] px-5 py-0">
-              <Button variant="outline" onPress={() => onOpenChange(false)}>取消</Button>
-              <Button className="editor-save-button" isDisabled={!completeness.canApply} variant="primary" onPress={() => void apply()}>应用库存</Button>
+
+            <Modal.Footer className="flex h-[62px] shrink-0 items-center gap-2 border-t border-[var(--app-border)] bg-[var(--app-surface)] px-6 py-0 shadow-[0_-4px_16px_rgba(15,23,42,0.04)]">
+              <p className="mr-auto text-[11px] text-[var(--app-text-muted)]">
+                {sessionId ? "扫描进行中，关闭窗口会取消本次会话" : "确认清单后再一次性写入求解器库存"}
+              </p>
+              <Button
+                className="h-9 rounded-md px-5"
+                size="sm"
+                variant="outline"
+                onPress={() => onOpenChange(false)}
+              >
+                取消
+              </Button>
+              <Button
+                className="editor-save-button h-9 rounded-md px-5"
+                isDisabled={!completeness.canApply}
+                size="sm"
+                variant="primary"
+                onPress={() => void apply()}
+              >
+                <Check className="size-3.5" />
+                应用库存
+              </Button>
             </Modal.Footer>
           </Modal.Dialog>
         </Modal.Container>

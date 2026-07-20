@@ -18,7 +18,9 @@ pub fn filter_game_windows(
     .filter(|candidate| {
       candidate
         .process_name
-        .eq_ignore_ascii_case("ZhuxianClient-Win64-Shipping.exe")
+        .strip_suffix(".exe")
+        .unwrap_or(&candidate.process_name)
+        .eq_ignore_ascii_case("ZhuxianClient-Win64-Shipping")
         && candidate.title.trim().contains("诛仙世界")
     })
     .collect()
@@ -353,7 +355,8 @@ impl InventorySession {
   pub fn snapshot(&self) -> TianGongInventorySnapshotV1 {
     TianGongInventorySnapshotV1 {
       version: 1,
-      captured_at: chrono::Utc::now().to_rfc3339(),
+      captured_at: chrono::Utc::now()
+        .to_rfc3339_opts(chrono::SecondsFormat::Millis, true),
       normal: self.normal.clone(),
       craft: self.craft.clone(),
     }

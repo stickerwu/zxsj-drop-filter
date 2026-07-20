@@ -1,8 +1,16 @@
 use std::ffi::c_void;
+use std::path::Path;
 use std::sync::mpsc::{self, SyncSender};
 use std::time::Duration;
 
+use windows::core::{Owned, PWSTR};
 use windows::Win32::Foundation::HWND;
+use windows::Win32::System::Threading::{
+  OpenProcess,
+  QueryFullProcessImageNameW,
+  PROCESS_NAME_WIN32,
+  PROCESS_QUERY_LIMITED_INFORMATION,
+};
 use windows::Win32::UI::WindowsAndMessaging::IsIconic;
 use windows_capture::capture::{Context, GraphicsCaptureApiHandler};
 use windows_capture::frame::Frame;
@@ -85,6 +93,35 @@ fn raw_window_id(window: Window) -> String {
   (window.as_raw_hwnd() as usize).to_string()
 }
 
+fn limited_process_name(window: Window) -> Result<String, String> {
+  let process_id = window
+    .process_id()
+    .map_err(|error| format!("读取窗口进程标识失败：{error}"))?;
+  let process = unsafe {
+    OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, false, process_id)
+  }
+  .map_err(|error| format!("打开窗口进程失败：{error}"))?;
+  let process = unsafe { Owned::new(process) };
+  let mut path = vec![0u16; 32_768];
+  let mut length = path.len() as u32;
+  unsafe {
+    QueryFullProcessImageNameW(
+      *process,
+      PROCESS_NAME_WIN32,
+      PWSTR(path.as_mut_ptr()),
+      &mut length,
+    )
+  }
+  .map_err(|error| format!("读取窗口进程路径失败：{error}"))?;
+  let path = String::from_utf16(&path[..length as usize])
+    .map_err(|_| "窗口进程路径编码无效".to_string())?;
+  Path::new(&path)
+    .file_name()
+    .and_then(|name| name.to_str())
+    .map(str::to_owned)
+    .ok_or_else(|| "窗口进程名称无效".to_string())
+}
+
 fn parse_window_id(window_id: &str) -> Result<Window, String> {
   let raw = window_id
     .parse::<usize>()
@@ -97,7 +134,7 @@ pub fn enumerate_game_windows() -> Result<Vec<GameWindowCandidate>, String> {
     .map_err(|error| format!("枚举窗口失败：{error}"))?
     .into_iter()
     .filter_map(|window| {
-      let process_name = window.process_name().ok()?;
+      let process_name = limited_process_name(window).ok()?;
       let title = window.title().ok()?;
       let minimized = unsafe { IsIconic(HWND(window.as_raw_hwnd())) }.as_bool();
       Some(GameWindowCandidate {
