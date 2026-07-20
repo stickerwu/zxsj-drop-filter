@@ -59,7 +59,6 @@ export function ThemeMenu() {
                   <Dropdown.ItemIndicator
                     className="ml-auto size-3.5 shrink-0 text-[var(--app-accent)] opacity-0 data-[visible]:opacity-100"
                     data-testid={`theme-selected-${option.key}`}
-                    data-visible={mode === option.key ? "true" : "false"}
                   >
                     <Check className="size-3.5" strokeWidth={2.25} />
                   </Dropdown.ItemIndicator>

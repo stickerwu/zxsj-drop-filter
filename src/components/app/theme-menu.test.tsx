@@ -30,10 +30,10 @@ describe("theme menu", () => {
     ).toHaveAttribute("data-visible", "true")
     expect(
       within(screen.getByRole("menuitemradio", { name: "亮色" })).getByTestId("theme-selected-light"),
-    ).toHaveAttribute("data-visible", "false")
+    ).not.toHaveAttribute("data-visible")
     expect(
       within(screen.getByRole("menuitemradio", { name: "暗色" })).getByTestId("theme-selected-dark"),
-    ).toHaveAttribute("data-visible", "false")
+    ).not.toHaveAttribute("data-visible")
 
     await user.click(screen.getByText("暗色"))
     expect(window.localStorage.getItem(THEME_STORAGE_KEY)).toBe("dark")
@@ -42,12 +42,12 @@ describe("theme menu", () => {
     const darkItem = screen.getByRole("menuitemradio", { name: "暗色" })
     expect(
       within(darkItem).getByTestId("theme-selected-dark"),
-    ).toHaveAttribute("data-visible", "true")
+      ).toHaveAttribute("data-visible", "true")
     expect(
       within(screen.getByRole("menuitemradio", { name: "亮色" })).getByTestId("theme-selected-light"),
-    ).toHaveAttribute("data-visible", "false")
+    ).not.toHaveAttribute("data-visible")
     expect(
       within(screen.getByRole("menuitemradio", { name: "跟随系统" })).getByTestId("theme-selected-system"),
-    ).toHaveAttribute("data-visible", "false")
+    ).not.toHaveAttribute("data-visible")
   })
 })
