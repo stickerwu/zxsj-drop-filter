@@ -83,10 +83,11 @@ export function createGiteeApi({
   }
 
   async function lookupFile(filePath, branch) {
-    return request(`/contents/${encodePath(filePath)}`, {
+    const content = await request(`/contents/${encodePath(filePath)}`, {
       allowNotFound: true,
       query: { ref: branch },
     })
+    return Array.isArray(content) && content.length === 0 ? null : content
   }
 
   return {

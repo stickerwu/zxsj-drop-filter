@@ -154,6 +154,41 @@ describe("Gitee API", () => {
       sha: "existing-sha",
     })
   })
+
+  it("creates a file when Gitee returns an empty content list", async () => {
+    const fetchImpl = vi
+      .fn()
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify([]), {
+          headers: { "content-type": "application/json" },
+          status: 200,
+        }),
+      )
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify({ content: { path: "latest.json" } }), {
+          headers: { "content-type": "application/json" },
+          status: 201,
+        }),
+      )
+    const api = createGiteeApi({
+      token: "secret-token",
+      owner: "stickerwu",
+      repo: "zxsj-drop-filter",
+      fetchImpl,
+    })
+
+    await api.upsertFile({
+      branch: "updater",
+      path: "latest.json",
+      content: '{"version":"0.3.0"}',
+      message: "release v0.3.0",
+    })
+
+    expect(fetchImpl.mock.calls[1][1].method).toBe("POST")
+    expect(
+      Object.fromEntries(fetchImpl.mock.calls[1][1].body.entries()),
+    ).not.toHaveProperty("sha")
+  })
 })
 
 describe("Gitee release orchestration", () => {
