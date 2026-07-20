@@ -1,6 +1,6 @@
 [package]
 name = "zxsj-drop-filter"
-version = "0.2.1"
+version = "0.3.0"
 description = "诛仙高手秘境掉落软件"
 authors = ["stickerwu"]
 license = "MIT"

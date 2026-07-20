@@ -1,7 +1,7 @@
 {
   "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
   "productName": "诛仙高手秘境掉落软件",
-  "version": "0.2.1",
+  "version": "0.3.0",
   "identifier": "com.stickerwu.zxsjdropfilter",
   "build": {
     "frontendDist": "../dist",
