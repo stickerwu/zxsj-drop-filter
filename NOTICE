@@ -1,0 +1,21 @@
+Third-party notices
+===================
+
+PaddleOCR / PP-OCRv5 models
+Copyright (c) PaddlePaddle Authors
+License: Apache License 2.0
+Source: https://github.com/PaddlePaddle/PaddleOCR
+
+The bundled files under src-tauri/resources/ocr are official PP-OCRv5 mobile
+detection and recognition ONNX resources and the corresponding character
+dictionary. They are used locally and are not downloaded at runtime.
+
+paddleocr_rs_onnx
+License: MIT OR Apache-2.0
+
+windows-capture
+License: MIT
+
+tauri-plugin-global-shortcut
+Copyright Tauri Programme within The Commons Conservancy
+License: Apache-2.0 OR MIT

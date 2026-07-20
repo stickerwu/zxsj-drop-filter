@@ -64,3 +64,37 @@ export interface TianGongSolveOptions {
   now?: () => number
   onProgress?: (solutions: TianGongSolution[]) => void
 }
+
+export type ScannedStoneCategory = "normal" | "craft"
+export type ScannedStoneShape = OrdinaryPieceKind | "craft" | "unknown"
+
+export interface ScannedTextField {
+  raw: string
+  confidence: number
+}
+
+export interface ScannedStone {
+  id: string
+  category: ScannedStoneCategory
+  shape: ScannedStoneShape
+  elementRaw: string | null
+  qualityRaw: string | null
+  primaryAttributes: ScannedTextField[]
+  spiritAttributes: ScannedTextField[]
+  marks: string[]
+  confirmed: boolean
+  confidence: number
+}
+
+export interface ScannedInventoryTab {
+  reportedCount: number | null
+  completed: boolean
+  items: ScannedStone[]
+}
+
+export interface TianGongInventorySnapshotV1 {
+  version: 1
+  capturedAt: string
+  normal: ScannedInventoryTab
+  craft: ScannedInventoryTab
+}

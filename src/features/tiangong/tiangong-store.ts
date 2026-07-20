@@ -12,6 +12,7 @@ import {
 import type {
   Cell,
   OrdinaryPieceKind,
+  PieceInventory,
   TianGongConfigV1,
   TianGongSolution,
   TianGongSolveResult,
@@ -36,6 +37,7 @@ interface TianGongStore {
   toggleCell: (cell: Cell) => void
   setAllCells: (active: boolean) => void
   setInventory: (piece: OrdinaryPieceKind, value: number) => void
+  applyInventory: (inventory: PieceInventory) => void
   setMaxSolutions: (value: number) => void
   setViewMode: (mode: TianGongViewMode) => void
   selectSolution: (index: number) => void
@@ -112,8 +114,21 @@ export const useTianGongStore = create<TianGongStore>((set, get) => ({
       ...get().config,
       inventory: {
         ...get().config.inventory,
-        [piece]: clampInteger(value, 0, 99),
+    [piece]: clampInteger(value, 0, 999),
       },
+    }
+    persistConfig(config)
+    set({ config, ...clearedSolveState })
+  },
+  applyInventory: (inventory) => {
+    const config = {
+      ...get().config,
+      inventory: Object.fromEntries(
+        Object.entries(inventory).map(([piece, value]) => [
+          piece,
+          clampInteger(value, 0, 999),
+        ]),
+      ) as PieceInventory,
     }
     persistConfig(config)
     set({ config, ...clearedSolveState })

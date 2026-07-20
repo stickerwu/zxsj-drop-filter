@@ -28,11 +28,11 @@ const configSchema = z.object({
     }
   }),
   inventory: z.object({
-    square: z.number().int().min(0, "机巧石数量不能小于 0").max(99, "机巧石数量不能超过 99"),
-    l: z.number().int().min(0, "机巧石数量不能小于 0").max(99, "机巧石数量不能超过 99"),
-    t: z.number().int().min(0, "机巧石数量不能小于 0").max(99, "机巧石数量不能超过 99"),
-    line: z.number().int().min(0, "机巧石数量不能小于 0").max(99, "机巧石数量不能超过 99"),
-    j: z.number().int().min(0, "机巧石数量不能小于 0").max(99, "机巧石数量不能超过 99"),
+    square: z.number().int().min(0, "机巧石数量不能小于 0").max(999, "机巧石数量不能超过 999"),
+    l: z.number().int().min(0, "机巧石数量不能小于 0").max(999, "机巧石数量不能超过 999"),
+    t: z.number().int().min(0, "机巧石数量不能小于 0").max(999, "机巧石数量不能超过 999"),
+    line: z.number().int().min(0, "机巧石数量不能小于 0").max(999, "机巧石数量不能超过 999"),
+    j: z.number().int().min(0, "机巧石数量不能小于 0").max(999, "机巧石数量不能超过 999"),
   }).strict(),
   maxSolutions: z.number().int().min(1, "最多方案数不能小于 1").max(5000, "最多方案数不能超过 5000"),
 }).strict()

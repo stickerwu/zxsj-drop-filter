@@ -10,6 +10,7 @@ import { useAppUpdater } from "@/updater/use-app-updater"
 import { DropEditorModal } from "@/components/editor/drop-editor-modal"
 import { TianGongWorkspace } from "@/features/tiangong/tiangong-workspace"
 import { useTianGongStore } from "@/features/tiangong/tiangong-store"
+import { InventoryScanModal } from "@/features/tiangong/inventory-scan-modal"
 import { AppToolbar } from "./app-toolbar"
 import { DropWorkspace } from "./drop-workspace"
 
@@ -24,6 +25,7 @@ export function AppShell({
   const activeCells = useTianGongStore((state) => state.config.activeCells.length)
   const { resolvedTheme } = useAppTheme()
   const [editorOpen, setEditorOpen] = useState(false)
+  const [inventoryScanOpen, setInventoryScanOpen] = useState(false)
   const nativeUpdater = useAppUpdater()
   const updater = updaterController ?? nativeUpdater
   const treasureCount = dataset.dungeons.reduce(
@@ -41,6 +43,7 @@ export function AppShell({
           setMode(nextMode)
         }}
         onOpenEditor={() => setEditorOpen(true)}
+        onOpenInventoryScan={() => setInventoryScanOpen(true)}
       />
 
       {mode === "drops" ? <DropWorkspace /> : <TianGongWorkspace />}
@@ -61,6 +64,9 @@ export function AppShell({
 
       {editorOpen && mode === "drops" && (
         <DropEditorModal open onOpenChange={setEditorOpen} />
+      )}
+      {inventoryScanOpen && mode === "tiangong" && (
+        <InventoryScanModal open onOpenChange={setInventoryScanOpen} />
       )}
       <UpdateReadyDialog
         canOpen={!editorOpen}

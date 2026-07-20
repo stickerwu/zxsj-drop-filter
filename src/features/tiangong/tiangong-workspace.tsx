@@ -91,7 +91,7 @@ function PieceNumberField({ piece }: { piece: OrdinaryPieceKind }) {
     <NumberField
       aria-label={`${PIECE_LABELS[piece]}数量`}
       className="w-[104px]"
-      maxValue={99}
+      maxValue={999}
       minValue={0}
       value={value}
       onChange={(nextValue) => setInventory(piece, nextValue)}

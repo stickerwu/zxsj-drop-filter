@@ -8,6 +8,7 @@ import {
   Grid2X2,
   ListFilter,
   RotateCcw,
+  ScanLine,
 } from "lucide-react"
 import { toast } from "sonner"
 import {
@@ -78,11 +79,13 @@ export function AppToolbar({
   mode,
   onModeChange,
   onOpenEditor,
+  onOpenInventoryScan,
   updater,
 }: {
   mode: AppMode
   onModeChange: (mode: AppMode) => void
   onOpenEditor: () => void
+  onOpenInventoryScan: () => void
   updater: AppUpdaterController
 }) {
   const clearFilters = useAppStore((state) => state.clearFilters)
@@ -214,6 +217,10 @@ export function AppToolbar({
           </>
         ) : (
           <>
+            <Button className="toolbar-command" size="sm" variant="primary" onPress={onOpenInventoryScan}>
+              <ScanLine className="size-3.5" />
+              库存扫描
+            </Button>
             <input
               ref={configInputRef}
               type="file"

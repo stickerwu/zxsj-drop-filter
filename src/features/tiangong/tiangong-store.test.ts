@@ -87,4 +87,35 @@ describe("tiangong store", () => {
       maxSolutions: 1,
     })
   })
+
+  it("applies scanned inventory in one state transition and invalidates solutions", () => {
+    useTianGongStore.setState({
+      solutions: [{ key: "solution", placements: [] }],
+      solveStatus: "solved",
+      viewMode: "solution",
+    })
+
+    useTianGongStore.getState().applyInventory({
+      square: 120,
+      l: 30,
+      t: 8,
+      line: 6,
+      j: 4,
+    })
+
+    expect(useTianGongStore.getState()).toMatchObject({
+      config: {
+        inventory: {
+          square: 120,
+          l: 30,
+          t: 8,
+          line: 6,
+          j: 4,
+        },
+      },
+      solutions: [],
+      solveStatus: "idle",
+      viewMode: "edit",
+    })
+  })
 })
