@@ -21,6 +21,7 @@ export function createGiteeApi({
   owner,
   repo,
   fetchImpl = fetch,
+  retryDelayMs = 5000,
 }) {
   if (!token) throw new Error("GITEE_TOKEN is required")
 
@@ -52,7 +53,34 @@ export function createGiteeApi({
       url.searchParams.set("access_token", token)
     }
 
-    const response = await fetchImpl(url, { body, method })
+    const maximumAttempts = file ? 3 : 1
+    let response
+    let lastError
+    for (let attempt = 1; attempt <= maximumAttempts; attempt += 1) {
+      try {
+        response = await fetchImpl(url, { body, method })
+        if (
+          attempt < maximumAttempts &&
+          (response.status === 408 ||
+            response.status === 429 ||
+            response.status >= 500)
+        ) {
+          await response.text()
+          await new Promise((resolve) =>
+            setTimeout(resolve, retryDelayMs * attempt),
+          )
+          continue
+        }
+        break
+      } catch (error) {
+        lastError = error
+        if (attempt === maximumAttempts) throw error
+        await new Promise((resolve) =>
+          setTimeout(resolve, retryDelayMs * attempt),
+        )
+      }
+    }
+    if (!response) throw lastError ?? new Error("Gitee request failed")
     if (response.status === 404 && allowNotFound) return null
 
     const contentType = response.headers.get("content-type") ?? ""

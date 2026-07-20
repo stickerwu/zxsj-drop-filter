@@ -52,8 +52,25 @@ export async function prepareGiteeRelease({ api, metadata }) {
   }
 
   const uploaded = []
-  for (const [filePath, name] of files) {
-    uploaded.push(await api.uploadAsset(releaseId, filePath, name))
+  try {
+    for (const [filePath, name] of files) {
+      uploaded.push(await api.uploadAsset(releaseId, filePath, name))
+    }
+  } catch (error) {
+    const updaterUrl =
+      `https://github.com/${owner}/${repo}/releases/download/` +
+      `${metadata.tag}/${metadata.names.updater}`
+    console.warn(
+      `Gitee attachment upload failed; using GitHub updater asset: ${
+        error instanceof Error ? error.message : String(error)
+      }`,
+    )
+    return {
+      releaseId,
+      updaterAssetId: null,
+      updaterUrl,
+      mirror: "github",
+    }
   }
   const updaterAsset = uploaded.find(
     (asset) => asset.name === metadata.names.updater,
@@ -66,6 +83,7 @@ export async function prepareGiteeRelease({ api, metadata }) {
     releaseId,
     updaterAssetId: updaterAsset.id,
     updaterUrl: api.assetDownloadUrl(releaseId, updaterAsset.id),
+    mirror: "gitee",
   }
 }
 

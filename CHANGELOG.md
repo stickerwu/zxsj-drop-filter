@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.5.1 - 2026-07-20
+
+- 修复大体积 OCR 安装包上传 Gitee 时的发布流水线失败。
+- Gitee Release 附件上传对网络错误、限流和服务端错误自动重试三次。
+- Gitee 大附件持续失败时仍发布 Gitee Release 与更新清单，并将安装包地址回退到同版本 GitHub Release。
+
 ## 0.5.0 - 2026-07-20
 
 - 天工机巧盘工具栏新增“库存扫描”，通过 Windows.Graphics.Capture 捕获未最小化的《诛仙世界》窗口。

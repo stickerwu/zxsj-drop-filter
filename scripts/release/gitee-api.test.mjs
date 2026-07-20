@@ -80,6 +80,31 @@ describe("Gitee API", () => {
     await expect(api.getReleaseByTag("v0.3.0")).resolves.toBeNull()
   })
 
+  it("retries transient attachment upload failures", async () => {
+    const filePath = await createTemporaryFile("installer.exe", "payload")
+    const fetchImpl = vi
+      .fn()
+      .mockRejectedValueOnce(new TypeError("fetch failed"))
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify({ id: 42, name: "installer.exe" }), {
+          headers: { "content-type": "application/json" },
+          status: 201,
+        }),
+      )
+    const api = createGiteeApi({
+      token: "secret-token",
+      owner: "stickerwu",
+      repo: "zxsj-drop-filter",
+      fetchImpl,
+      retryDelayMs: 0,
+    })
+
+    await expect(
+      api.uploadAsset(12, filePath, "installer.exe"),
+    ).resolves.toMatchObject({ id: 42 })
+    expect(fetchImpl).toHaveBeenCalledTimes(2)
+  })
+
   it("creates a missing branch only after a 404 lookup", async () => {
     const fetchImpl = vi
       .fn()
@@ -235,6 +260,7 @@ describe("Gitee release orchestration", () => {
       releaseId: 12,
       updaterAssetId: 44,
       updaterUrl: "https://gitee.example/updater",
+      mirror: "gitee",
     })
     expect(api.deleteAsset).toHaveBeenCalledWith(12, 1)
     expect(api.deleteAsset).not.toHaveBeenCalledWith(12, 2)
@@ -243,6 +269,46 @@ describe("Gitee release orchestration", () => {
       12,
       expect.not.objectContaining({ target_commitish: expect.anything() }),
     )
+  })
+
+  it("falls back to the GitHub release asset when Gitee upload keeps failing", async () => {
+    const api = {
+      assetDownloadUrl: vi.fn(),
+      createRelease: vi.fn(),
+      deleteAsset: vi.fn(),
+      getReleaseByTag: vi.fn().mockResolvedValue({
+        id: 12,
+        tag_name: "v0.5.1",
+      }),
+      listAssets: vi.fn().mockResolvedValue([]),
+      updateRelease: vi.fn().mockResolvedValue({ id: 12 }),
+      uploadAsset: vi.fn().mockRejectedValue(new Error("upload timeout")),
+    }
+    const metadata = {
+      version: "0.5.1",
+      tag: "v0.5.1",
+      notes: "- retry uploads",
+      names: {
+        installer: "zxsj-drop-filter_0.5.1_x64-setup.exe",
+        updater: "zxsj-drop-filter_0.5.1_x64-setup.exe",
+        signature: "zxsj-drop-filter_0.5.1_x64-setup.exe.sig",
+      },
+      output: {
+        installerPath: "installer.exe",
+        updaterPath: "installer.exe",
+        signaturePath: "installer.exe.sig",
+      },
+      checksumPath: "SHA256SUMS.txt",
+    }
+
+    await expect(
+      prepareGiteeRelease({ api, metadata }),
+    ).resolves.toMatchObject({
+      releaseId: 12,
+      updaterUrl:
+        "https://github.com/stickerwu/zxsj-drop-filter/releases/download/v0.5.1/zxsj-drop-filter_0.5.1_x64-setup.exe",
+      mirror: "github",
+    })
   })
 
   it("publishes the release before updating the stable manifest", async () => {

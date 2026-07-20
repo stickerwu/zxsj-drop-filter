@@ -93,7 +93,7 @@ GITEE_TOKEN
 
 签名私钥和密码不能提交到仓库。私钥丢失后无法继续为现有客户端发布可验证的自动更新包，必须在仓库之外保留加密备份。
 
-应用首先读取 Gitee 更新清单和 Gitee Release 附件；Gitee 请求失败时，再尝试 GitHub Release 的 `latest.json`。检测到新正式版后自动后台下载，下载完成后提供“稍后安装”和“立即安装并重启”。
+应用首先读取 Gitee 更新清单和 Gitee Release 附件；Gitee 请求失败时，再尝试 GitHub Release 的 `latest.json`。发布阶段若 Gitee 大附件连续重试仍失败，Gitee 清单会临时指向同版本 GitHub Release 安装包，保证更新链路可用。检测到新正式版后自动后台下载，下载完成后提供“稍后安装”和“立即安装并重启”。
 
 本项目使用 Tauri v2 updater 格式：同一个 NSIS `setup.exe` 同时用于手动安装和应用内更新，Release 还会附带对应的 `setup.exe.sig`。不生成只用于兼容 Tauri v1 客户端的 `.nsis.zip`。
 

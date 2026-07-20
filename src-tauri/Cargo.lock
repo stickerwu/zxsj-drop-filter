@@ -6383,7 +6383,7 @@ dependencies = [
 
 [[package]]
 name = "zxsj-drop-filter"
-version = "0.5.0"
+version = "0.5.1"
 dependencies = [
  "chrono",
  "image",
