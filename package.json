@@ -10,6 +10,9 @@
     "test:watch": "vitest",
     "lint": "eslint .",
     "preview": "vite preview",
+    "release:manifest": "node scripts/release/prepare-artifacts.mjs manifest",
+    "release:prepare": "node scripts/release/prepare-artifacts.mjs prepare",
+    "release:validate": "node scripts/release/validate-release.mjs",
     "tauri:dev": "tauri dev",
     "tauri:build": "tauri build"
   },
@@ -44,6 +47,7 @@
     "globals": "^17.7.0",
     "jsdom": "^29.1.1",
     "prettier": "^3.9.5",
+    "smol-toml": "^1.7.0",
     "tailwindcss": "^4.3.3",
     "typescript": "~6.0.2",
     "typescript-eslint": "^8.62.0",
