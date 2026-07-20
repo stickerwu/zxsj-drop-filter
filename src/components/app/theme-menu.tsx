@@ -57,7 +57,7 @@ export function ThemeMenu() {
                   <Icon className="size-3.5 shrink-0 text-[var(--app-text-muted)]" />
                   <span className="flex-1">{option.label}</span>
                   <Dropdown.ItemIndicator
-                    className="ml-auto size-3.5 shrink-0 text-[var(--app-accent)] opacity-0 data-[visible]:opacity-100"
+                    className="static ml-auto size-3.5 shrink-0 text-[var(--app-accent)] opacity-0 data-[visible]:opacity-100"
                     data-testid={`theme-selected-${option.key}`}
                   >
                     <Check className="size-3.5" strokeWidth={2.25} />

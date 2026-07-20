@@ -252,4 +252,4 @@ git status --short
 git log -2 --oneline
 ```
 
-Expected: clean worktree and the latest commit is `style: simplify theme dropdown`.
+Expected: clean worktree and recent compact-theme-menu commits only, with no unrelated file changes.

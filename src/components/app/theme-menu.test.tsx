@@ -29,6 +29,9 @@ describe("theme menu", () => {
       within(systemItem).getByTestId("theme-selected-system"),
     ).toHaveAttribute("data-visible", "true")
     expect(
+      within(systemItem).getByTestId("theme-selected-system"),
+    ).toHaveClass("static", "ml-auto")
+    expect(
       within(screen.getByRole("menuitemradio", { name: "亮色" })).getByTestId("theme-selected-light"),
     ).not.toHaveAttribute("data-visible")
     expect(
