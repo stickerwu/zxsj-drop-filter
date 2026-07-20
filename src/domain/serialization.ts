@@ -116,7 +116,7 @@ export function serializeZxData(dataset: DropDataset): Uint8Array {
     baojian: [...new Set(dataset.dungeons.flatMap((dungeon) => dungeon.treasures.map((treasure) => treasure.name)))],
     slots: dataset.slots,
     attributes: [...dataset.attributes],
-    source_note: "诛仙高手秘境掉落软件：借鉴诛仙世界-秘境掉落筛选，并兼容其 drop_tables.zx 数据结构。",
+    source_note: "诛仙高手工具箱：秘境掉落功能借鉴诛仙世界-秘境掉落筛选，并兼容其 drop_tables.zx 数据结构。",
     tables: dataset.dungeons.flatMap((dungeon) => dungeon.treasures.map((treasure) => ({
       dungeon: dungeon.name,
       baojian: treasure.name,

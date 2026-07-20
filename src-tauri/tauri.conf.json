@@ -1,7 +1,7 @@
 {
   "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
-  "productName": "诛仙高手秘境掉落软件",
-  "version": "0.3.1",
+  "productName": "诛仙高手工具箱",
+  "version": "0.4.0",
   "identifier": "com.stickerwu.zxsjdropfilter",
   "build": {
     "frontendDist": "../dist",
@@ -12,7 +12,7 @@
   "app": {
     "windows": [
       {
-        "title": "诛仙高手 · 秘境掉落软件",
+        "title": "诛仙高手工具箱",
         "width": 1440,
         "height": 900,
         "minWidth": 1180,

@@ -10,6 +10,8 @@ import userEvent from "@testing-library/user-event"
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 import { demoDataset } from "@/data/demo-data"
 import { useAppStore } from "@/store/app-store"
+import { useAppModeStore } from "@/store/app-mode-store"
+import { resetTianGongStore } from "@/features/tiangong/tiangong-store"
 import { ThemeProvider } from "@/theme/theme-provider"
 import type { AppUpdaterController } from "@/updater/use-app-updater"
 import { AppShell } from "./app-shell"
@@ -41,6 +43,8 @@ describe("app shell", () => {
       selectedRecommendationId: null,
       activeResultTab: "recommendations",
     })
+    useAppModeStore.setState({ mode: "drops" })
+    resetTianGongStore()
   })
 
   it("renders the complete desktop workbench", () => {
@@ -50,7 +54,11 @@ describe("app shell", () => {
       </ThemeProvider>,
     )
 
-    expect(screen.getByText("诛仙高手秘境掉落软件")).toBeInTheDocument()
+    expect(screen.getByText("诛仙高手工具箱")).toBeInTheDocument()
+    expect(screen.getByRole("button", { name: "秘境掉落" })).toHaveAttribute(
+      "data-selected",
+      "true",
+    )
     expect(screen.getByRole("tab", { name: /推荐宝鉴/ })).toBeInTheDocument()
     expect(screen.getByText(/本地计算/)).toBeInTheDocument()
     expect(screen.getByRole("button", { name: "数据编辑" })).toHaveAttribute(
@@ -61,6 +69,27 @@ describe("app shell", () => {
       "tagName",
       "BUTTON",
     )
+  })
+
+  it("switches primary modes and swaps mode-specific toolbar actions", async () => {
+    render(
+      <ThemeProvider>
+        <AppShell />
+      </ThemeProvider>,
+    )
+
+    fireEvent.click(screen.getByRole("button", { name: "天工机巧盘" }))
+
+    expect(useAppModeStore.getState().mode).toBe("tiangong")
+    expect(screen.getByRole("heading", { name: "天工机巧盘" })).toBeInTheDocument()
+    expect(screen.queryByRole("button", { name: "数据编辑" })).not.toBeInTheDocument()
+    expect(screen.getByRole("button", { name: "导入配置" })).toBeInTheDocument()
+    expect(screen.getByRole("button", { name: "导出配置" })).toBeInTheDocument()
+    expect(screen.getByRole("button", { name: "恢复默认" })).toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole("button", { name: "秘境掉落" }))
+    expect(screen.getByRole("button", { name: "数据编辑" })).toBeInTheDocument()
+    expect(screen.queryByRole("button", { name: "导入配置" })).not.toBeInTheDocument()
   })
 
   it("discards editor drafts after closing and reloads replaced data", async () => {

@@ -9,7 +9,7 @@ const repo = "zxsj-drop-filter"
 function releaseFields(metadata, prerelease) {
   return {
     body: metadata.notes,
-    name: `诛仙高手秘境掉落软件 v${metadata.version}`,
+    name: `诛仙高手工具箱 v${metadata.version}`,
     prerelease,
     tag_name: metadata.tag,
   }
