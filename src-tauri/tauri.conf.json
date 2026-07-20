@@ -27,6 +27,7 @@
   },
   "bundle": {
     "active": true,
+    "createUpdaterArtifacts": true,
     "targets": "all",
     "icon": [
       "icons/32x32.png",
@@ -37,6 +38,18 @@
     ],
     "android": {
       "debugApplicationIdSuffix": ".debug"
+    }
+  },
+  "plugins": {
+    "updater": {
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IERBNzVDQTA0QjE5QUQ0MTcKUldRWDFKcXhCTXAxMnRiWXFpdm94RjQ2MXBEUXE0M0RXN2xlTVZIZ1o1U2NKV0I3UG94Z3J5M0cK",
+      "endpoints": [
+        "https://gitee.com/stickerwu/zxsj-drop-filter/raw/updater/latest.json",
+        "https://github.com/stickerwu/zxsj-drop-filter/releases/latest/download/latest.json"
+      ],
+      "windows": {
+        "installMode": "passive"
+      }
     }
   }
 }
