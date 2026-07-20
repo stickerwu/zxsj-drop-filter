@@ -10,6 +10,9 @@ import { Toaster } from "sonner"
 import { recommendTreasures } from "@/domain/recommendations"
 import { useAppStore } from "@/store/app-store"
 import { useAppTheme } from "@/theme/theme-context"
+import type { AppUpdaterController } from "@/updater/use-app-updater"
+import { UpdateReadyDialog } from "@/updater/update-ready-dialog"
+import { useAppUpdater } from "@/updater/use-app-updater"
 import { DropEditorModal } from "@/components/editor/drop-editor-modal"
 import { ResultsTabs } from "@/components/results/results-tabs"
 import { AppToolbar } from "./app-toolbar"
@@ -31,7 +34,11 @@ function PanelDivider() {
   )
 }
 
-export function AppShell() {
+export function AppShell({
+  updaterController,
+}: {
+  updaterController?: AppUpdaterController
+} = {}) {
   const dataset = useAppStore((state) => state.dataset)
   const filters = useAppStore((state) => state.filters)
   const selectedRecommendationId = useAppStore(
@@ -39,6 +46,8 @@ export function AppShell() {
   )
   const { resolvedTheme } = useAppTheme()
   const [editorOpen, setEditorOpen] = useState(false)
+  const nativeUpdater = useAppUpdater()
+  const updater = updaterController ?? nativeUpdater
   const recommendations = useMemo(
     () => recommendTreasures(dataset, filters),
     [dataset, filters],
@@ -57,7 +66,10 @@ export function AppShell() {
 
   return (
     <div className="flex h-screen min-h-[720px] flex-col overflow-hidden bg-[var(--app-bg)] text-[var(--app-text)]">
-      <AppToolbar onOpenEditor={() => setEditorOpen(true)} />
+      <AppToolbar
+        onOpenEditor={() => setEditorOpen(true)}
+        updater={updater}
+      />
 
       <div className="min-h-0 flex-1 p-3">
         <PanelGroup
@@ -121,6 +133,10 @@ export function AppShell() {
       {editorOpen && (
         <DropEditorModal open onOpenChange={setEditorOpen} />
       )}
+      <UpdateReadyDialog
+        canOpen={!editorOpen}
+        controller={updater}
+      />
       <Toaster position="bottom-right" richColors theme={resolvedTheme} />
     </div>
   )

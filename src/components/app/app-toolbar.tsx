@@ -9,6 +9,8 @@ import {
   serializeZxData,
 } from "@/domain/serialization"
 import { useAppStore } from "@/store/app-store"
+import type { AppUpdaterController } from "@/updater/use-app-updater"
+import { UpdateStatusControl } from "@/updater/update-status-control"
 import { ThemeMenu } from "./theme-menu"
 
 function downloadFile(data: BlobPart, type: string, filename: string) {
@@ -21,7 +23,13 @@ function downloadFile(data: BlobPart, type: string, filename: string) {
   URL.revokeObjectURL(url)
 }
 
-export function AppToolbar({ onOpenEditor }: { onOpenEditor: () => void }) {
+export function AppToolbar({
+  onOpenEditor,
+  updater,
+}: {
+  onOpenEditor: () => void
+  updater: AppUpdaterController
+}) {
   const clearFilters = useAppStore((state) => state.clearFilters)
   const setDataset = useAppStore((state) => state.setDataset)
   const inputRef = useRef<HTMLInputElement>(null)
@@ -134,6 +142,7 @@ export function AppToolbar({ onOpenEditor }: { onOpenEditor: () => void }) {
           </Button>
           <Tooltip.Content>复制项目标题</Tooltip.Content>
         </Tooltip>
+        <UpdateStatusControl controller={updater} />
         <ThemeMenu />
       </div>
     </header>

@@ -137,6 +137,24 @@ select:focus-visible {
   box-shadow: none !important;
 }
 
+.update-status-command {
+  min-width: 34px !important;
+  max-width: 180px;
+  box-shadow: none !important;
+}
+
+.update-status-command[data-update-status="ready"],
+.update-status-command[data-update-status="installing"] {
+  border-color: var(--app-accent) !important;
+  background: var(--app-accent) !important;
+  color: #ffffff !important;
+}
+
+.update-status-command[data-update-status="error"] {
+  border-color: color-mix(in srgb, #e5484d 42%, var(--app-border)) !important;
+  color: #d63c42 !important;
+}
+
 .filter-option {
   width: 100% !important;
   height: 36px !important;

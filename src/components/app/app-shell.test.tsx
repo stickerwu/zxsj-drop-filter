@@ -7,11 +7,24 @@ import {
   within,
 } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
-import { afterEach, beforeEach, describe, expect, it } from "vitest"
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 import { demoDataset } from "@/data/demo-data"
 import { useAppStore } from "@/store/app-store"
 import { ThemeProvider } from "@/theme/theme-provider"
+import type { AppUpdaterController } from "@/updater/use-app-updater"
 import { AppShell } from "./app-shell"
+
+function createUpdaterController(
+  state: AppUpdaterController["state"],
+): AppUpdaterController {
+  return {
+    state,
+    checkNow: vi.fn().mockResolvedValue(undefined),
+    dismissPrompt: vi.fn(),
+    openPrompt: vi.fn(),
+    installAndRelaunch: vi.fn().mockResolvedValue(undefined),
+  }
+}
 
 describe("app shell", () => {
   afterEach(cleanup)
@@ -103,5 +116,43 @@ describe("app shell", () => {
         name: "展开属性",
       }),
     ).toHaveValue("专精")
+  })
+
+  it("defers a ready update dialog until the editor closes", async () => {
+    const idleController = createUpdaterController({ status: "idle" })
+    const readyController = createUpdaterController({
+      status: "ready",
+      currentVersion: "0.3.0",
+      nextVersion: "0.3.1",
+      notes: "- updater",
+      promptOpen: true,
+    })
+    const { rerender } = render(
+      <ThemeProvider>
+        <AppShell updaterController={idleController} />
+      </ThemeProvider>,
+    )
+
+    fireEvent.click(screen.getByRole("button", { name: "数据编辑" }))
+    await screen.findByRole("dialog", { name: "掉落表编辑器" })
+
+    rerender(
+      <ThemeProvider>
+        <AppShell updaterController={readyController} />
+      </ThemeProvider>,
+    )
+    expect(
+      screen.queryByRole("dialog", { name: "安装软件更新" }),
+    ).not.toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole("button", { name: "取消" }))
+    await waitFor(() => {
+      expect(
+        screen.queryByRole("dialog", { name: "掉落表编辑器" }),
+      ).not.toBeInTheDocument()
+    })
+    expect(
+      await screen.findByRole("dialog", { name: "安装软件更新" }),
+    ).toBeInTheDocument()
   })
 })
