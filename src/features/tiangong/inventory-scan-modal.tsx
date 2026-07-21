@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react"
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import {
   Button,
   Chip,
@@ -35,6 +35,7 @@ import {
 } from "./inventory"
 import {
   nativeInventoryScannerClient,
+  type AutoScanPhase,
   type GameWindowCandidate,
   type InventoryScannerClient,
 } from "./inventory-client"
@@ -63,6 +64,18 @@ const ordinaryShapeOptions = [
   "j",
   "unknown",
 ] as const
+
+type ScanUiPhase = "idle" | "error" | AutoScanPhase
+
+const scanPhaseLabels: Record<ScanUiPhase, string> = {
+  idle: "等待开启",
+  waiting: "等待画面停稳",
+  scrolling: "检测到滚动",
+  stable: "准备自动采集",
+  captured: "已采集当前画面",
+  recognizing: "正在识别",
+  error: "需要调整画面",
+}
 
 function ScannerSelect({
   label,
@@ -299,6 +312,10 @@ export function InventoryScanModal({
   const [busy, setBusy] = useState(false)
   const [loadingWindows, setLoadingWindows] = useState(true)
   const [muted, setMuted] = useState(false)
+  const [continuousScan, setContinuousScan] = useState(true)
+  const [scanPhase, setScanPhase] = useState<ScanUiPhase>("idle")
+  const [scanError, setScanError] = useState<string | null>(null)
+  const captureInFlight = useRef(false)
   const completeness = useMemo(() => scanCompleteness(snapshot), [snapshot])
   const counts = useMemo(() => inventoryCounts(snapshot), [snapshot])
   const selectedWindow = windows.find((window) => window.windowId === windowId)
@@ -349,8 +366,11 @@ export function InventoryScanModal({
   }, [loadingWindows, open, refreshWindows, sessionId, windows.length])
 
   const capture = useCallback(async (id: string) => {
-    if (busy || id !== sessionId) return
+    if (captureInFlight.current || id !== sessionId) return
+    captureInFlight.current = true
     setBusy(true)
+    setScanPhase("recognizing")
+    setScanError(null)
     try {
       const next = parseInventorySnapshot(await client.capture(id))
       setSnapshot(next)
@@ -358,12 +378,17 @@ export function InventoryScanModal({
         next.craft.items.length > snapshot.craft.items.length ? "craft" : "normal",
       )
       toast.success("当前库存页已识别")
+      setScanPhase("captured")
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : String(error))
+      const message = error instanceof Error ? error.message : String(error)
+      setScanError(message)
+      setScanPhase("error")
+      toast.error(message)
     } finally {
+      captureInFlight.current = false
       setBusy(false)
     }
-  }, [busy, client, sessionId, snapshot.craft.items.length])
+  }, [client, sessionId, snapshot.craft.items.length])
 
   useEffect(() => {
     if (!open) return
@@ -373,6 +398,42 @@ export function InventoryScanModal({
     })
     return () => dispose()
   }, [capture, client, open])
+
+  useEffect(() => {
+    if (!open || !sessionId || !continuousScan) return
+    let disposed = false
+    let probing = false
+
+    const probe = async () => {
+      if (disposed || probing || captureInFlight.current) return
+      probing = true
+      try {
+        const result = await client.probe(sessionId)
+        if (disposed || result.sessionId !== sessionId) return
+        setScanPhase(result.phase)
+        setScanError(null)
+        if (result.shouldCapture) {
+          await capture(sessionId)
+        }
+      } catch (error) {
+        if (disposed) return
+        const message = error instanceof Error ? error.message : String(error)
+        setScanError(message)
+        setScanPhase("error")
+        setContinuousScan(false)
+        toast.error(message)
+      } finally {
+        probing = false
+      }
+    }
+
+    void probe()
+    const timer = window.setInterval(() => void probe(), 250)
+    return () => {
+      disposed = true
+      window.clearInterval(timer)
+    }
+  }, [capture, client, continuousScan, open, sessionId])
 
   useEffect(() => () => {
     if (sessionId) void client.cancel(sessionId)
@@ -384,7 +445,13 @@ export function InventoryScanModal({
       const result = await client.begin(windowId || undefined, muted)
       setSessionId(result.sessionId)
       setSnapshot(parseInventorySnapshot(result.snapshot))
-      toast.success("扫描已开启，请在游戏中按 Ctrl+Shift+F8")
+      setScanPhase(continuousScan ? "waiting" : "idle")
+      setScanError(null)
+      toast.success(
+        continuousScan
+          ? "连续扫描已开启，手动滚动后停稳即可自动采集"
+          : "扫描已开启，可使用按钮或 Ctrl+Shift+F8 采集",
+      )
     } catch (error) {
       toast.error(error instanceof Error ? error.message : String(error))
     } finally {
@@ -455,7 +522,7 @@ export function InventoryScanModal({
             尚未采集{tab === "normal" ? "机巧石" : "匠心石"}页签
           </p>
           <p className="mt-1 max-w-sm text-xs leading-5 text-[var(--app-text-muted)]">
-            在游戏中打开对应页签，手动滚动并保留至少一行重叠，然后按 Ctrl+Shift+F8。
+            在游戏中打开对应页签，手动滚动并保留至少一行重叠，画面停稳后会自动采集。
           </p>
         </div>
       )
@@ -576,12 +643,48 @@ export function InventoryScanModal({
                   )}
 
                   <Surface className="mt-4 rounded-md border border-[var(--app-border)] bg-[var(--app-surface-muted)] p-3">
-                    <p className="flex items-center gap-2 text-[13px] font-semibold text-[var(--app-text)]">
-                      <Keyboard className="size-4 text-[var(--app-accent)]" />
-                      Ctrl+Shift+F8
-                    </p>
-                    <p className="mt-1 text-[11px] leading-5 text-[var(--app-text-muted)]">
-                      每次手动滚动后保留至少一行重叠，再按热键采集当前页面。
+                    <Switch
+                      aria-label="连续扫描"
+                      className="w-full"
+                      isSelected={continuousScan}
+                      onChange={(enabled) => {
+                        setContinuousScan(enabled)
+                        setScanPhase(enabled && sessionId ? "waiting" : "idle")
+                        setScanError(null)
+                      }}
+                    >
+                      <Switch.Content className="flex w-full items-center gap-2">
+                        <ScanLine className="size-4 text-[var(--app-accent)]" />
+                        <span className="flex-1 text-[13px] font-semibold text-[var(--app-text)]">
+                          连续扫描
+                        </span>
+                        <Switch.Control>
+                          <Switch.Thumb />
+                        </Switch.Control>
+                      </Switch.Content>
+                    </Switch>
+                    <div className="mt-2 flex items-center justify-between gap-2">
+                      <span className="text-[11px] text-[var(--app-text-muted)]">
+                        手动滚动，停稳约 0.35 秒后自动采集
+                      </span>
+                      <Chip
+                        className={scanPhase === "error"
+                          ? "bg-amber-50 text-amber-700 dark:bg-amber-950/30 dark:text-amber-300"
+                          : "bg-[var(--app-accent-soft)] text-[var(--app-accent)]"}
+                        size="sm"
+                        variant="soft"
+                      >
+                        {scanPhaseLabels[scanPhase]}
+                      </Chip>
+                    </div>
+                    {scanError && (
+                      <p className="mt-2 text-[11px] leading-5 text-amber-700 dark:text-amber-300">
+                        {scanError}
+                      </p>
+                    )}
+                    <p className="mt-2 flex items-center gap-2 text-[11px] leading-5 text-[var(--app-text-muted)]">
+                      <Keyboard className="size-3.5 shrink-0" />
+                      Ctrl+Shift+F8 仍可用于手动补采
                     </p>
                   </Surface>
 
@@ -608,7 +711,7 @@ export function InventoryScanModal({
                     {busy
                       ? <RefreshCw className="size-4 animate-spin" />
                       : <ScanLine className="size-4" />}
-                    {busy ? "正在识别" : "采集当前页"}
+                    {busy ? "正在识别" : "手动补采当前页"}
                   </Button>
 
                   <Switch

@@ -13,6 +13,7 @@ pub fn run() {
     .invoke_handler(tauri::generate_handler![
       tiangong_scan::list_tiangong_game_windows,
       tiangong_scan::begin_tiangong_inventory_scan,
+      tiangong_scan::probe_tiangong_inventory_scan,
       tiangong_scan::capture_tiangong_inventory_page,
       tiangong_scan::finish_tiangong_inventory_scan,
       tiangong_scan::cancel_tiangong_inventory_scan,

@@ -1,5 +1,6 @@
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
+use std::time::Instant;
 
 use serde::Serialize;
 use tauri::{AppHandle, Emitter, Manager, State};
@@ -12,8 +13,11 @@ use uuid::Uuid;
 use crate::tiangong_capture::{
   capture_game_window,
   enumerate_game_windows,
+  inventory_motion_signature,
 };
 use crate::tiangong_inventory::{
+  AutoCapturePhase,
+  AutoCaptureTracker,
   merge_page,
   register_vertical_overlap,
   GameWindowCandidate,
@@ -39,6 +43,15 @@ pub struct BeginScanResult {
 
 #[derive(Clone, Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
+pub struct AutoScanProbeResult {
+  pub session_id: String,
+  pub phase: AutoCapturePhase,
+  pub stable_for_ms: u64,
+  pub should_capture: bool,
+}
+
+#[derive(Clone, Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
 struct HotkeyPayload {
   session_id: String,
 }
@@ -59,6 +72,8 @@ struct ActiveScan {
   previous: HashMap<InventoryTabKind, PreviousPage>,
   busy: bool,
   muted: bool,
+  started_at: Instant,
+  auto_capture: AutoCaptureTracker,
 }
 
 pub struct TianGongScanState {
@@ -138,6 +153,8 @@ pub fn begin_tiangong_inventory_scan(
     previous: HashMap::new(),
     busy: false,
     muted: muted.unwrap_or(false),
+    started_at: Instant::now(),
+    auto_capture: AutoCaptureTracker::default(),
   });
   drop(active);
 
@@ -171,6 +188,79 @@ pub fn begin_tiangong_inventory_scan(
     session_id,
     window,
     snapshot: InventorySession::default().snapshot(),
+  })
+}
+
+fn validate_frame_size(
+  scan: &mut ActiveScan,
+  width: u32,
+  height: u32,
+) -> Result<(), String> {
+  if let Some(size) = scan.frame_size {
+    if size != (width, height) {
+      return Err("游戏分辨率已变化，请重新开始扫描".to_string());
+    }
+  } else {
+    scan.frame_size = Some((width, height));
+  }
+  Ok(())
+}
+
+#[tauri::command]
+pub async fn probe_tiangong_inventory_scan(
+  state: State<'_, TianGongScanState>,
+  session_id: String,
+) -> Result<AutoScanProbeResult, String> {
+  let window_id = {
+    let active = state.active.lock().map_err(|_| "扫描状态已损坏".to_string())?;
+    let scan = active.as_ref().ok_or_else(|| "扫描会话已关闭".to_string())?;
+    if scan.session_id != session_id {
+      return Err("扫描结果已过期，请重新开始".to_string());
+    }
+    if scan.busy {
+      return Ok(AutoScanProbeResult {
+        session_id,
+        phase: AutoCapturePhase::Recognizing,
+        stable_for_ms: 0,
+        should_capture: false,
+      });
+    }
+    scan.window_id.clone()
+  };
+
+  let frame = tauri::async_runtime::spawn_blocking(move || {
+    capture_game_window(&window_id)
+  })
+  .await
+  .map_err(|error| format!("库存画面探测任务失败：{error}"))??;
+  let signature = inventory_motion_signature(&frame);
+  if signature.is_empty() {
+    return Err("无法生成库存画面特征，请重新开始扫描".to_string());
+  }
+
+  let mut active = state.active.lock().map_err(|_| "扫描状态已损坏".to_string())?;
+  let scan = active.as_mut().ok_or_else(|| "扫描会话已关闭".to_string())?;
+  if scan.session_id != session_id {
+    return Err("扫描结果已过期，请重新开始".to_string());
+  }
+  if scan.busy {
+    return Ok(AutoScanProbeResult {
+      session_id,
+      phase: AutoCapturePhase::Recognizing,
+      stable_for_ms: 0,
+      should_capture: false,
+    });
+  }
+  validate_frame_size(scan, frame.width, frame.height)?;
+  let observation = scan.auto_capture.observe(
+    &signature,
+    scan.started_at.elapsed().as_millis() as u64,
+  );
+  Ok(AutoScanProbeResult {
+    session_id,
+    phase: observation.phase,
+    stable_for_ms: observation.stable_for_ms,
+    should_capture: observation.should_capture,
   })
 }
 
@@ -232,13 +322,12 @@ pub fn capture_tiangong_inventory_page(
       if scan.session_id != session_id {
         return Err("扫描结果已过期，请重新开始".to_string());
       }
-      if let Some(size) = scan.frame_size {
-        if size != (frame.width, frame.height) {
-          return Err("游戏分辨率已变化，请重新开始扫描".to_string());
-        }
-      } else {
-        scan.frame_size = Some((frame.width, frame.height));
+      validate_frame_size(scan, frame.width, frame.height)?;
+      let signature = inventory_motion_signature(&frame);
+      if signature.is_empty() {
+        return Err("无法生成库存画面特征，请重新开始扫描".to_string());
       }
+      scan.auto_capture.mark_attempted(&signature);
     }
     let recognized = ocr_engine(&app, &state)?.recognize_page(&frame)?;
     let mut active = state.active.lock().map_err(|_| "扫描状态已损坏".to_string())?;

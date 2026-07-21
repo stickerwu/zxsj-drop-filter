@@ -15,9 +15,24 @@ export interface BeginScanResult {
   snapshot: TianGongInventorySnapshotV1
 }
 
+export type AutoScanPhase =
+  | "waiting"
+  | "scrolling"
+  | "stable"
+  | "captured"
+  | "recognizing"
+
+export interface AutoScanProbeResult {
+  sessionId: string
+  phase: AutoScanPhase
+  stableForMs: number
+  shouldCapture: boolean
+}
+
 export interface InventoryScannerClient {
   listWindows(): Promise<GameWindowCandidate[]>
   begin(windowId?: string, muted?: boolean): Promise<BeginScanResult>
+  probe(sessionId: string): Promise<AutoScanProbeResult>
   capture(sessionId: string): Promise<TianGongInventorySnapshotV1>
   finish(sessionId: string): Promise<TianGongInventorySnapshotV1>
   cancel(sessionId?: string): Promise<void>
@@ -34,6 +49,8 @@ export const nativeInventoryScannerClient: InventoryScannerClient = {
   listWindows: () => isTauriRuntime() ? invoke("list_tiangong_game_windows") : Promise.resolve([]),
   begin: (windowId, muted) =>
     invoke("begin_tiangong_inventory_scan", { windowId, muted }),
+  probe: (sessionId) =>
+    invoke("probe_tiangong_inventory_scan", { sessionId }),
   capture: (sessionId) =>
     invoke("capture_tiangong_inventory_page", { sessionId }),
   finish: (sessionId) =>

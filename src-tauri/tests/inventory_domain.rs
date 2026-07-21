@@ -1,4 +1,6 @@
 use app_lib::tiangong_inventory::{
+  AutoCapturePhase,
+  AutoCaptureTracker,
   classify_shape_mask,
   filter_game_windows,
   locate_inventory_layout,
@@ -16,6 +18,8 @@ use app_lib::tiangong_inventory::{
 use app_lib::tiangong_capture::{
   capture_game_window,
   enumerate_game_windows,
+  inventory_motion_signature,
+  CapturedGameFrame,
 };
 use app_lib::tiangong_ocr::{
   extract_shape_mask,
@@ -251,6 +255,87 @@ fn vertical_registration_uses_overlapping_pixels_instead_of_item_fingerprints() 
 
   assert_eq!(registration.scroll_pixels, 2);
   assert_eq!(registration.overlap_rows, 4);
+}
+
+#[test]
+fn auto_capture_waits_for_the_initial_frame_to_stabilize() {
+  let mut tracker = AutoCaptureTracker::default();
+  let signature = vec![20; 64];
+
+  let initial = tracker.observe(&signature, 0);
+  let waiting = tracker.observe(&signature, 300);
+  let stable = tracker.observe(&signature, 350);
+
+  assert_eq!(initial.phase, AutoCapturePhase::Waiting);
+  assert!(!initial.should_capture);
+  assert_eq!(waiting.stable_for_ms, 300);
+  assert!(!waiting.should_capture);
+  assert_eq!(stable.phase, AutoCapturePhase::Stable);
+  assert!(stable.should_capture);
+}
+
+#[test]
+fn auto_capture_resets_stability_after_scroll_motion() {
+  let mut tracker = AutoCaptureTracker::default();
+  let first = vec![20; 64];
+  let scrolled = vec![80; 64];
+
+  tracker.observe(&first, 0);
+  let motion = tracker.observe(&scrolled, 400);
+  let waiting = tracker.observe(&scrolled, 700);
+  let stable = tracker.observe(&scrolled, 750);
+
+  assert_eq!(motion.phase, AutoCapturePhase::Scrolling);
+  assert_eq!(waiting.stable_for_ms, 300);
+  assert!(!waiting.should_capture);
+  assert!(stable.should_capture);
+}
+
+#[test]
+fn auto_capture_does_not_repeat_the_same_attempted_frame() {
+  let mut tracker = AutoCaptureTracker::default();
+  let signature = vec![42; 64];
+
+  tracker.observe(&signature, 0);
+  let stable = tracker.observe(&signature, 350);
+  assert!(stable.should_capture);
+
+  tracker.mark_attempted(&signature);
+  let duplicate = tracker.observe(&signature, 900);
+
+  assert_eq!(duplicate.phase, AutoCapturePhase::Captured);
+  assert!(!duplicate.should_capture);
+}
+
+#[test]
+fn inventory_motion_signature_ignores_the_left_side_and_tracks_the_inventory_area() {
+  let mut base = CapturedGameFrame {
+    width: 200,
+    height: 100,
+    rgba: vec![20; 200 * 100 * 4],
+  };
+  for pixel in base.rgba.chunks_exact_mut(4) {
+    pixel[3] = 255;
+  }
+  let base_signature = inventory_motion_signature(&base);
+
+  let mut left_changed = base.clone();
+  for y in 0..100usize {
+    for x in 0..80usize {
+      let offset = (y * 200 + x) * 4;
+      left_changed.rgba[offset..offset + 3].fill(220);
+    }
+  }
+  assert_eq!(inventory_motion_signature(&left_changed), base_signature);
+
+  let mut inventory_changed = base;
+  for y in 20..90usize {
+    for x in 120..190usize {
+      let offset = (y * 200 + x) * 4;
+      inventory_changed.rgba[offset..offset + 3].fill(220);
+    }
+  }
+  assert_ne!(inventory_motion_signature(&inventory_changed), base_signature);
 }
 
 #[test]

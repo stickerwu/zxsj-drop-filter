@@ -1,6 +1,104 @@
 use serde::{Deserialize, Serialize};
 use std::collections::HashSet;
 
+const AUTO_CAPTURE_STABLE_MS: u64 = 350;
+const AUTO_CAPTURE_MOTION_THRESHOLD: u64 = 8;
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Serialize)]
+#[serde(rename_all = "lowercase")]
+pub enum AutoCapturePhase {
+  Waiting,
+  Scrolling,
+  Stable,
+  Captured,
+  Recognizing,
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub struct AutoCaptureObservation {
+  pub phase: AutoCapturePhase,
+  pub stable_for_ms: u64,
+  pub should_capture: bool,
+}
+
+#[derive(Clone, Debug, Default)]
+pub struct AutoCaptureTracker {
+  previous_signature: Option<Vec<u8>>,
+  attempted_signature: Option<Vec<u8>>,
+  stable_since_ms: Option<u64>,
+}
+
+fn signature_difference(left: &[u8], right: &[u8]) -> u64 {
+  if left.is_empty() || left.len() != right.len() {
+    return u64::MAX;
+  }
+  left
+    .iter()
+    .zip(right)
+    .map(|(left, right)| left.abs_diff(*right) as u64)
+    .sum::<u64>()
+    / left.len() as u64
+}
+
+impl AutoCaptureTracker {
+  pub fn observe(
+    &mut self,
+    signature: &[u8],
+    observed_at_ms: u64,
+  ) -> AutoCaptureObservation {
+    let moved = self
+      .previous_signature
+      .as_deref()
+      .is_some_and(|previous| {
+        signature_difference(previous, signature)
+          > AUTO_CAPTURE_MOTION_THRESHOLD
+      });
+    self.previous_signature = Some(signature.to_vec());
+
+    if moved {
+      self.stable_since_ms = Some(observed_at_ms);
+      return AutoCaptureObservation {
+        phase: AutoCapturePhase::Scrolling,
+        stable_for_ms: 0,
+        should_capture: false,
+      };
+    }
+
+    let stable_since = *self.stable_since_ms.get_or_insert(observed_at_ms);
+    let stable_for_ms = observed_at_ms.saturating_sub(stable_since);
+    let already_attempted = self
+      .attempted_signature
+      .as_deref()
+      .is_some_and(|attempted| {
+        signature_difference(attempted, signature)
+          <= AUTO_CAPTURE_MOTION_THRESHOLD
+      });
+    if already_attempted {
+      return AutoCaptureObservation {
+        phase: AutoCapturePhase::Captured,
+        stable_for_ms,
+        should_capture: false,
+      };
+    }
+    if stable_for_ms >= AUTO_CAPTURE_STABLE_MS {
+      return AutoCaptureObservation {
+        phase: AutoCapturePhase::Stable,
+        stable_for_ms,
+        should_capture: true,
+      };
+    }
+    AutoCaptureObservation {
+      phase: AutoCapturePhase::Waiting,
+      stable_for_ms,
+      should_capture: false,
+    }
+  }
+
+  pub fn mark_attempted(&mut self, signature: &[u8]) {
+    self.attempted_signature = Some(signature.to_vec());
+  }
+}
+
 #[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct GameWindowCandidate {

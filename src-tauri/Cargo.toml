@@ -1,6 +1,6 @@
 [package]
 name = "zxsj-drop-filter"
-version = "0.5.8"
+version = "0.6.0"
 description = "诛仙高手工具箱"
 authors = ["stickerwu"]
 license = "MIT"

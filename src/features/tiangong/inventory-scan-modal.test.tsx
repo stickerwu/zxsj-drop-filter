@@ -24,6 +24,7 @@ describe("InventoryScanModal", () => {
         minimized: false,
       }]),
       begin: vi.fn(),
+      probe: vi.fn(),
       capture: vi.fn(),
       finish: vi.fn(),
       cancel: vi.fn(async () => undefined),
@@ -54,6 +55,7 @@ describe("InventoryScanModal", () => {
           minimized: false,
         }]),
       begin: vi.fn(),
+      probe: vi.fn(),
       capture: vi.fn(),
       finish: vi.fn(),
       cancel: vi.fn(async () => undefined),
@@ -87,6 +89,7 @@ describe("InventoryScanModal", () => {
         minimized: false,
       }]),
       begin: vi.fn(),
+      probe: vi.fn(),
       capture: vi.fn(),
       finish: vi.fn(),
       cancel: vi.fn(async () => undefined),
@@ -111,6 +114,7 @@ describe("InventoryScanModal", () => {
     const client: InventoryScannerClient = {
       listWindows: vi.fn(async () => []),
       begin: vi.fn(),
+      probe: vi.fn(),
       capture: vi.fn(),
       finish: vi.fn(),
       cancel: vi.fn(async () => undefined),
@@ -141,5 +145,57 @@ describe("InventoryScanModal", () => {
     expect(tabbar.lastElementChild).toBe(addButton)
     expect(footer).toHaveClass("h-[50px]")
     expect(footer).not.toHaveClass("border-t")
+  })
+
+  it("enables continuous scanning and captures a stable frame automatically", async () => {
+    const initial = createEmptyInventorySnapshot()
+    const client: InventoryScannerClient = {
+      listWindows: vi.fn(async () => [{
+        windowId: "1",
+        processName: "ZhuxianClient-Win64-Shipping.exe",
+        title: "诛仙世界",
+        minimized: false,
+      }]),
+      begin: vi.fn(async () => ({
+        sessionId: "scan-1",
+        window: {
+          windowId: "1",
+          processName: "ZhuxianClient-Win64-Shipping.exe",
+          title: "诛仙世界",
+          minimized: false,
+        },
+        snapshot: initial,
+      })),
+      probe: vi.fn(async () => ({
+        sessionId: "scan-1",
+        phase: "stable" as const,
+        stableForMs: 350,
+        shouldCapture: true,
+      })),
+      capture: vi.fn(async () => initial),
+      finish: vi.fn(async () => initial),
+      cancel: vi.fn(async () => undefined),
+      load: vi.fn(async () => initial),
+      save: vi.fn(async () => undefined),
+      listenHotkey: vi.fn(async () => () => undefined),
+    }
+
+    render(
+      <ThemeProvider>
+        <InventoryScanModal client={client} open onOpenChange={() => undefined} />
+      </ThemeProvider>,
+    )
+
+    expect(await screen.findByRole("switch", { name: "连续扫描" })).toBeChecked()
+    fireEvent.click(screen.getByRole("button", { name: "开启扫描" }))
+
+    await waitFor(() => expect(client.begin).toHaveBeenCalledTimes(1))
+    await waitFor(() => expect(client.probe).toHaveBeenCalled())
+    await waitFor(() => expect(client.capture).toHaveBeenCalledWith("scan-1"))
+
+    fireEvent.click(screen.getByRole("switch", { name: "连续扫描" }))
+    const probeCount = vi.mocked(client.probe).mock.calls.length
+    await new Promise((resolve) => window.setTimeout(resolve, 350))
+    expect(client.probe).toHaveBeenCalledTimes(probeCount)
   })
 })

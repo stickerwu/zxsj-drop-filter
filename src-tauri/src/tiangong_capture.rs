@@ -53,6 +53,36 @@ impl CapturedGameFrame {
   }
 }
 
+pub fn inventory_motion_signature(frame: &CapturedGameFrame) -> Vec<u8> {
+  if frame.width == 0
+    || frame.height == 0
+    || frame.rgba.len() != (frame.width * frame.height * 4) as usize
+  {
+    return Vec::new();
+  }
+
+  const GRID_WIDTH: u32 = 48;
+  const GRID_HEIGHT: u32 = 48;
+  let left = frame.width * 55 / 100;
+  let top = frame.height * 18 / 100;
+  let region_width = (frame.width * 42 / 100).max(1);
+  let region_height = (frame.height * 76 / 100).max(1);
+
+  let mut signature = Vec::with_capacity((GRID_WIDTH * GRID_HEIGHT) as usize);
+  for row in 0..GRID_HEIGHT {
+    let y = top + row * region_height.saturating_sub(1) / (GRID_HEIGHT - 1);
+    for column in 0..GRID_WIDTH {
+      let x = left + column * region_width.saturating_sub(1) / (GRID_WIDTH - 1);
+      let offset = ((y * frame.width + x) * 4) as usize;
+      let red = frame.rgba[offset] as u16;
+      let green = frame.rgba[offset + 1] as u16;
+      let blue = frame.rgba[offset + 2] as u16;
+      signature.push(((red * 77 + green * 150 + blue * 29) >> 8) as u8);
+    }
+  }
+  signature
+}
+
 struct OneFrameCapture {
   sender: SyncSender<Result<CapturedGameFrame, String>>,
 }
