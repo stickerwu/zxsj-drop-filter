@@ -490,22 +490,28 @@ export function InventoryScanModal({
             className="inventory-scan-modal flex h-[min(780px,calc(100vh-24px))] w-[min(1360px,calc(100vw-24px))] max-w-none flex-col overflow-hidden rounded-lg border border-[var(--app-border)] bg-[var(--app-surface)] text-[var(--app-text)] shadow-[0_24px_70px_rgba(15,23,42,0.28)] dark:shadow-[0_28px_80px_rgba(0,0,0,0.58)]"
             data-testid="inventory-scan-modal"
           >
-            <Modal.Header className="relative flex h-[76px] shrink-0 items-center gap-3 border-b border-[var(--app-border)] bg-[var(--app-surface)] px-6 py-0">
-              <span className="flex size-10 items-center justify-center rounded-md bg-[var(--app-accent-soft)] text-[var(--app-accent)]">
-                <ScanLine className="size-5" />
+            <Modal.Header
+              className="relative flex h-[60px] shrink-0 flex-row items-center justify-start gap-3 bg-[var(--app-surface)] px-5 py-0"
+              data-testid="inventory-scan-header"
+            >
+              <span className="flex size-9 items-center justify-center rounded-md bg-[var(--app-accent-soft)] text-[var(--app-accent)]">
+                <ScanLine className="size-[18px]" />
               </span>
               <div className="min-w-0 flex-1">
-                <Modal.Heading className="text-lg font-semibold text-[var(--app-text)]">
+                <Modal.Heading className="text-[16px] font-semibold leading-5 text-[var(--app-text)]">
                   游戏库存扫描核对
                 </Modal.Heading>
-                <p className="mt-1 text-xs text-[var(--app-text-muted)]">
+                <p className="mt-0.5 truncate text-[11px] leading-4 text-[var(--app-text-muted)]">
                   仅窗口捕获与本地 OCR，不读取游戏内存，不向游戏发送输入
                 </p>
               </div>
               <Chip
-                className={sessionId
-                  ? "bg-[var(--app-accent-soft)] text-[var(--app-accent)]"
-                  : "bg-[var(--app-control)] text-[var(--app-text-muted)]"}
+                className={`mr-8 ${
+                  sessionId
+                    ? "bg-[var(--app-accent-soft)] text-[var(--app-accent)]"
+                    : "bg-[var(--app-control)] text-[var(--app-text-muted)]"
+                }`}
+                data-testid="inventory-scan-session-status"
                 size="sm"
                 variant="soft"
               >
@@ -662,27 +668,35 @@ export function InventoryScanModal({
                     onSelectionChange={(key) =>
                       setSelectedTab(String(key) as "normal" | "craft")}
                   >
-                    <Tabs.ListContainer className="flex h-16 shrink-0 items-center justify-between border-b border-[var(--app-border)] bg-[var(--app-surface)] px-4">
-                      <Tabs.List
-                        aria-label="库存页签"
-                        className="grid w-[330px] grid-cols-2 rounded-md bg-[var(--app-control)] p-1"
+                    <div
+                      className="flex h-[52px] shrink-0 items-center bg-[var(--app-surface)] px-4"
+                      data-testid="inventory-scan-tabbar"
+                    >
+                      <Tabs.ListContainer
+                        className="w-[330px] shrink-0"
                       >
-                        {(["normal", "craft"] as const).map((tab) => (
-                          <Tabs.Tab
-                            key={tab}
-                            className="h-9 justify-center gap-2 rounded-[5px] text-[12px]"
-                            id={tab}
-                          >
-                            <span>{tab === "normal" ? "机巧石" : "匠心石"}</span>
-                            <Chip size="sm" variant="soft">
-                              {snapshot[tab].items.length}/{snapshot[tab].reportedCount ?? "?"}
-                            </Chip>
-                            <Tabs.Indicator />
-                          </Tabs.Tab>
-                        ))}
-                      </Tabs.List>
+                        <Tabs.List
+                          aria-label="库存页签"
+                          className="grid w-full grid-cols-2 rounded-md bg-[var(--app-control)] p-1"
+                        >
+                          {(["normal", "craft"] as const).map((tab) => (
+                            <Tabs.Tab
+                              key={tab}
+                              className="h-9 justify-center gap-2 rounded-[5px] text-[12px]"
+                              id={tab}
+                            >
+                              <span>{tab === "normal" ? "机巧石" : "匠心石"}</span>
+                              <Chip size="sm" variant="soft">
+                                {snapshot[tab].items.length}/{snapshot[tab].reportedCount ?? "?"}
+                              </Chip>
+                              <Tabs.Indicator />
+                            </Tabs.Tab>
+                          ))}
+                        </Tabs.List>
+                      </Tabs.ListContainer>
                       <Button
-                        className="h-9 rounded-md"
+                        className="ml-auto h-9 shrink-0 rounded-md"
+                        data-testid="inventory-scan-add-item"
                         size="sm"
                         variant="outline"
                         onPress={addItem}
@@ -690,7 +704,7 @@ export function InventoryScanModal({
                         <Plus className="size-3.5" />
                         手动新增
                       </Button>
-                    </Tabs.ListContainer>
+                    </div>
                     <Tabs.Panel
                       className="m-0 min-h-0 flex-1 overflow-y-auto p-0"
                       id="normal"
@@ -773,7 +787,10 @@ export function InventoryScanModal({
               </div>
             </Modal.Body>
 
-            <Modal.Footer className="flex h-[62px] shrink-0 items-center gap-2 border-t border-[var(--app-border)] bg-[var(--app-surface)] px-6 py-0 shadow-[0_-4px_16px_rgba(15,23,42,0.04)]">
+            <Modal.Footer
+              className="flex h-[50px] shrink-0 items-center gap-2 bg-[var(--app-surface)] px-5 py-0"
+              data-testid="inventory-scan-footer"
+            >
               <p className="mr-auto text-[11px] text-[var(--app-text-muted)]">
                 {sessionId ? "扫描进行中，关闭窗口会取消本次会话" : "确认清单后再一次性写入求解器库存"}
               </p>

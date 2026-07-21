@@ -106,4 +106,40 @@ describe("InventoryScanModal", () => {
     expect(document.querySelector('input[type="number"]')).toBeNull()
     expect(screen.getByRole("switch", { name: "扫描提示音" })).toBeInTheDocument()
   })
+
+  it("uses a compact frameless header and footer with manual add at the tabbar edge", async () => {
+    const client: InventoryScannerClient = {
+      listWindows: vi.fn(async () => []),
+      begin: vi.fn(),
+      capture: vi.fn(),
+      finish: vi.fn(),
+      cancel: vi.fn(async () => undefined),
+      load: vi.fn(async () => createEmptyInventorySnapshot()),
+      save: vi.fn(async () => undefined),
+      listenHotkey: vi.fn(async () => () => undefined),
+    }
+
+    render(
+      <ThemeProvider>
+        <InventoryScanModal client={client} open onOpenChange={() => undefined} />
+      </ThemeProvider>,
+    )
+
+    const header = await screen.findByTestId("inventory-scan-header")
+    const tabbar = screen.getByTestId("inventory-scan-tabbar")
+    const addButton = screen.getByTestId("inventory-scan-add-item")
+    const footer = screen.getByTestId("inventory-scan-footer")
+    const sessionStatus = screen.getByTestId("inventory-scan-session-status")
+
+    expect(header).toHaveClass("h-[60px]")
+    expect(header).toHaveClass("flex-row")
+    expect(header).not.toHaveClass("border-b")
+    expect(sessionStatus).toHaveClass("mr-8")
+    expect(tabbar).toHaveClass("h-[52px]")
+    expect(tabbar).not.toHaveClass("border-b")
+    expect(addButton).toHaveClass("ml-auto")
+    expect(tabbar.lastElementChild).toBe(addButton)
+    expect(footer).toHaveClass("h-[50px]")
+    expect(footer).not.toHaveClass("border-t")
+  })
 })
