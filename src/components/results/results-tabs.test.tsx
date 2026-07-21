@@ -106,4 +106,105 @@ describe("results tabs", () => {
 
     expect(useAppStore.getState().selectedRecommendationId).toBe(recommendations[1].id)
   })
+
+  it("filters hit items by treasure without changing the other result data", async () => {
+    const user = userEvent.setup()
+    const recommendations = recommendTreasures(demoDataset, {
+      attributes: [],
+      mode: "any",
+      slots: [],
+      dungeons: [],
+    })
+    const selectedTreasure = recommendations[0].treasureName
+    const hiddenTreasure = recommendations[1].treasureName
+
+    render(<HitItemTable recommendations={recommendations} />)
+
+    await user.click(screen.getByRole("button", { name: "筛选宝鉴" }))
+    await user.click(
+      screen.getByRole("menuitemcheckbox", { name: selectedTreasure }),
+    )
+    await user.keyboard("{Escape}")
+
+    expect(
+      screen.getAllByRole("gridcell", { name: selectedTreasure }).length,
+    ).toBeGreaterThan(0)
+    expect(
+      screen.queryByRole("gridcell", { name: hiddenTreasure }),
+    ).not.toBeInTheDocument()
+  })
+
+  it("combines treasure and slot filters with AND logic", async () => {
+    const user = userEvent.setup()
+    const recommendations = recommendTreasures(demoDataset, {
+      attributes: [],
+      mode: "any",
+      slots: [],
+      dungeons: [],
+    })
+    const selectedRecommendation = recommendations.find((item) => {
+      const slots = new Set(
+        item.dungeonDetails.flatMap((detail) =>
+          detail.matchedEntries.map((entry) => entry.slot),
+        ),
+      )
+      return slots.size > 1
+    })!
+    const selectedTreasure = selectedRecommendation.treasureName
+    const selectedSlot = selectedRecommendation.dungeonDetails
+      .flatMap((detail) => detail.matchedEntries)[0].slot
+
+    render(<HitItemTable recommendations={recommendations} />)
+
+    await user.click(screen.getByRole("button", { name: "筛选宝鉴" }))
+    await user.click(
+      screen.getByRole("menuitemcheckbox", { name: selectedTreasure }),
+    )
+    await user.keyboard("{Escape}")
+    await user.click(screen.getByRole("button", { name: "筛选部位" }))
+    await user.click(
+      screen.getByRole("menuitemcheckbox", { name: selectedSlot }),
+    )
+    await user.keyboard("{Escape}")
+
+    const rows = screen.getAllByRole("row").slice(1)
+    expect(rows.length).toBeGreaterThan(0)
+    rows.forEach((row) => {
+      expect(row).toHaveTextContent(selectedTreasure)
+      expect(row).toHaveTextContent(selectedSlot)
+    })
+  })
+
+  it("clears a hit item column filter and restores hidden rows", async () => {
+    const user = userEvent.setup()
+    const recommendations = recommendTreasures(demoDataset, {
+      attributes: [],
+      mode: "any",
+      slots: [],
+      dungeons: [],
+    })
+    const selectedTreasure = recommendations[0].treasureName
+    const restoredTreasure = recommendations[1].treasureName
+
+    render(<HitItemTable recommendations={recommendations} />)
+
+    await user.click(screen.getByRole("button", { name: "筛选宝鉴" }))
+    await user.click(
+      screen.getByRole("menuitemcheckbox", { name: selectedTreasure }),
+    )
+    await user.keyboard("{Escape}")
+    expect(
+      screen.queryByRole("gridcell", { name: restoredTreasure }),
+    ).not.toBeInTheDocument()
+
+    await user.click(screen.getByRole("button", { name: "筛选宝鉴" }))
+    await user.click(
+      screen.getByRole("button", { name: "清除宝鉴筛选" }),
+    )
+    await user.keyboard("{Escape}")
+
+    expect(
+      screen.getAllByRole("gridcell", { name: restoredTreasure }).length,
+    ).toBeGreaterThan(0)
+  })
 })
