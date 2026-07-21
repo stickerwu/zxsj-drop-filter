@@ -107,6 +107,35 @@ describe("results tabs", () => {
     expect(useAppStore.getState().selectedRecommendationId).toBe(recommendations[1].id)
   })
 
+  it("filters dungeon details by treasure without changing row selection behavior", async () => {
+    const user = userEvent.setup()
+    const recommendations = recommendTreasures(demoDataset, {
+      attributes: [],
+      mode: "any",
+      slots: [],
+      dungeons: [],
+    })
+    const selectedTreasure = recommendations[0].treasureName
+    const hiddenTreasure = recommendations.find(
+      (item) => item.treasureName !== selectedTreasure,
+    )!.treasureName
+
+    render(<DungeonDetailTable recommendations={recommendations} />)
+
+    await user.click(screen.getByRole("button", { name: "筛选宝鉴" }))
+    await user.click(
+      screen.getByRole("menuitemcheckbox", { name: selectedTreasure }),
+    )
+    await user.keyboard("{Escape}")
+
+    expect(
+      screen.getAllByRole("gridcell", { name: selectedTreasure }).length,
+    ).toBeGreaterThan(0)
+    expect(
+      screen.queryByRole("gridcell", { name: hiddenTreasure }),
+    ).not.toBeInTheDocument()
+  })
+
   it("filters hit items by treasure without changing the other result data", async () => {
     const user = userEvent.setup()
     const recommendations = recommendTreasures(demoDataset, {

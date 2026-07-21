@@ -1,6 +1,8 @@
+import { useMemo, useState } from "react"
 import { Chip, Table } from "@heroui/react"
 import type { Recommendation } from "@/domain/types"
 import { useAppStore } from "@/store/app-store"
+import { ResultColumnFilter } from "./result-column-filter"
 
 function formatPercent(value: number) {
   return `${(value * 100).toFixed(2)}%`
@@ -16,20 +18,43 @@ export function DungeonDetailTable({
   recommendations: Recommendation[]
 }) {
   const selectRecommendation = useAppStore((state) => state.selectRecommendation)
-  const rows = recommendations
-    .flatMap((item) =>
-      item.dungeonDetails.map((detail) => ({
-        recommendationId: item.id,
-        treasureName: item.treasureName,
-        detail,
-      })),
-    )
-    .sort(
-      (left, right) =>
-        right.detail.probability - left.detail.probability
-        || right.detail.matchedRowCount - left.detail.matchedRowCount
-        || left.detail.dungeonName.localeCompare(right.detail.dungeonName, "zh-CN"),
-    )
+  const [selectedTreasures, setSelectedTreasures] = useState<Set<string>>(
+    () => new Set(),
+  )
+  const rows = useMemo(
+    () => recommendations
+      .flatMap((item) =>
+        item.dungeonDetails.map((detail) => ({
+          recommendationId: item.id,
+          treasureName: item.treasureName,
+          detail,
+        })),
+      )
+      .sort(
+        (left, right) =>
+          right.detail.probability - left.detail.probability
+          || right.detail.matchedRowCount - left.detail.matchedRowCount
+          || left.detail.dungeonName.localeCompare(right.detail.dungeonName, "zh-CN"),
+      ),
+    [recommendations],
+  )
+  const treasureOptions = useMemo(
+    () => [...new Set(rows.map((row) => row.treasureName))]
+      .sort((a, b) => a.localeCompare(b, "zh-CN")),
+    [rows],
+  )
+  const effectiveSelectedTreasures = useMemo(() => {
+    const available = new Set(treasureOptions)
+    return new Set([...selectedTreasures].filter((item) => available.has(item)))
+  }, [selectedTreasures, treasureOptions])
+  const filteredRows = useMemo(
+    () => rows.filter(
+      (row) =>
+        effectiveSelectedTreasures.size === 0
+        || effectiveSelectedTreasures.has(row.treasureName),
+    ),
+    [effectiveSelectedTreasures, rows],
+  )
   const recommendationByRowId = new Map(
     rows.map((row) => [
       `${row.recommendationId}-${row.detail.dungeonId}`,
@@ -54,14 +79,21 @@ export function DungeonDetailTable({
             <Table.Header className="result-table-header sticky top-0 z-10">
               <Table.Column className="w-14 text-center" data-readable-header="true">排名</Table.Column>
               <Table.Column data-readable-header="true" isRowHeader>副本</Table.Column>
-              <Table.Column data-readable-header="true">宝鉴</Table.Column>
+              <Table.Column data-readable-header="true">
+                <ResultColumnFilter
+                  label="宝鉴"
+                  options={treasureOptions}
+                  selected={effectiveSelectedTreasures}
+                  onChange={setSelectedTreasures}
+                />
+              </Table.Column>
               <Table.Column data-readable-header="true">命中概率</Table.Column>
               <Table.Column data-readable-header="true">期望次数</Table.Column>
               <Table.Column data-readable-header="true">命中/总数</Table.Column>
               <Table.Column className="min-w-[260px]" data-readable-header="true">预览（点选看完整）</Table.Column>
             </Table.Header>
             <Table.Body>
-              {rows.map((row, index) => (
+              {filteredRows.map((row, index) => (
                 <Table.Row
                   key={`${row.recommendationId}-${row.detail.dungeonId}`}
                   id={`${row.recommendationId}-${row.detail.dungeonId}`}
@@ -101,9 +133,11 @@ export function DungeonDetailTable({
           </Table.Content>
         </Table.ScrollContainer>
       </Table>
-      {rows.length === 0 && (
+      {filteredRows.length === 0 && (
         <div className="pointer-events-none absolute inset-x-0 top-24 text-center text-sm text-[var(--app-text-muted)]">
-          当前条件没有副本宝鉴明细。
+          {rows.length === 0
+            ? "当前条件没有副本宝鉴明细。"
+            : "当前列筛选没有副本宝鉴明细。"}
         </div>
       )}
     </div>
