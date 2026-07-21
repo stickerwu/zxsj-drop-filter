@@ -105,6 +105,30 @@ describe("Gitee API", () => {
     expect(fetchImpl).toHaveBeenCalledTimes(2)
   })
 
+  it("retries transient non-file API failures", async () => {
+    const fetchImpl = vi
+      .fn()
+      .mockRejectedValueOnce(new TypeError("fetch failed"))
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify({ id: 12, tag_name: "v0.5.8" }), {
+          headers: { "content-type": "application/json" },
+          status: 200,
+        }),
+      )
+    const api = createGiteeApi({
+      token: "secret-token",
+      owner: "stickerwu",
+      repo: "zxsj-drop-filter",
+      fetchImpl,
+      retryDelayMs: 0,
+    })
+
+    await expect(api.getReleaseByTag("v0.5.8")).resolves.toMatchObject({
+      id: 12,
+    })
+    expect(fetchImpl).toHaveBeenCalledTimes(2)
+  })
+
   it("creates a missing branch only after a 404 lookup", async () => {
     const fetchImpl = vi
       .fn()
@@ -311,6 +335,42 @@ describe("Gitee release orchestration", () => {
     })
   })
 
+  it("falls back to GitHub metadata when Gitee release preparation fails", async () => {
+    const api = {
+      getReleaseByTag: vi.fn().mockRejectedValue(new Error("Gitee unavailable")),
+    }
+    const metadata = {
+      version: "0.5.8",
+      tag: "v0.5.8",
+      notes: "- resilient release preparation",
+      names: {
+        installer: "zxsj-drop-filter_0.5.8_x64-setup.exe",
+        updater: "zxsj-drop-filter_0.5.8_x64-setup.exe",
+        signature: "zxsj-drop-filter_0.5.8_x64-setup.exe.sig",
+      },
+      output: {
+        installerPath: "installer.exe",
+        updaterPath: "installer.exe",
+        signaturePath: "installer.exe.sig",
+      },
+      checksumPath: "SHA256SUMS.txt",
+    }
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {})
+
+    await expect(
+      prepareGiteeRelease({ api, metadata }),
+    ).resolves.toMatchObject({
+      releaseId: null,
+      updaterUrl:
+        "https://github.com/stickerwu/zxsj-drop-filter/releases/download/v0.5.8/zxsj-drop-filter_0.5.8_x64-setup.exe",
+      mirror: "github",
+    })
+    expect(warn).toHaveBeenCalledWith(
+      expect.stringContaining("Gitee release preparation failed"),
+    )
+    warn.mockRestore()
+  })
+
   it("publishes the release before updating the stable manifest", async () => {
     const callOrder = []
     const latestPath = await createTemporaryFile(
@@ -396,5 +456,42 @@ describe("Gitee release orchestration", () => {
       expect.stringContaining("Gitee latest.json attachment upload failed"),
     )
     warn.mockRestore()
+  })
+
+  it("updates the stable manifest without a Gitee release id", async () => {
+    const latestPath = await createTemporaryFile(
+      "latest.json",
+      '{"version":"0.5.8"}',
+    )
+    const api = {
+      deleteAsset: vi.fn(),
+      ensureBranch: vi.fn(),
+      listAssets: vi.fn(),
+      updateRelease: vi.fn(),
+      uploadAsset: vi.fn(),
+      upsertFile: vi.fn(),
+    }
+
+    await publishGiteeRelease({
+      api,
+      metadata: {
+        tag: "v0.5.8",
+        notes: "- updater branch fallback",
+        version: "0.5.8",
+      },
+      release: { releaseId: null },
+      latestPath,
+    })
+
+    expect(api.listAssets).not.toHaveBeenCalled()
+    expect(api.updateRelease).not.toHaveBeenCalled()
+    expect(api.ensureBranch).toHaveBeenCalledWith("updater", "v0.5.8")
+    expect(api.upsertFile).toHaveBeenCalledWith(
+      expect.objectContaining({
+        branch: "updater",
+        content: '{"version":"0.5.8"}',
+        path: "latest.json",
+      }),
+    )
   })
 })

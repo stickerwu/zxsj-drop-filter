@@ -53,7 +53,7 @@ export function createGiteeApi({
       url.searchParams.set("access_token", token)
     }
 
-    const maximumAttempts = file ? 3 : 1
+    const maximumAttempts = 3
     let response
     let lastError
     for (let attempt = 1; attempt <= maximumAttempts; attempt += 1) {

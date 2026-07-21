@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.5.8 - 2026-07-21
+
+- Gitee Release 查询、创建、更新及 updater 分支操作增加网络错误、限流和服务端错误重试。
+- Gitee 预发布准备失败时自动生成 GitHub 安装包回退元数据，不再阻断 GitHub Release。
+- 无 Gitee Release ID 时跳过附件操作，仍继续更新默认使用的 `updater/latest.json`。
+
 ## 0.5.7 - 2026-07-21
 
 - Gitee Release 的可选 `latest.json` 附件上传失败时不再中断整个发布流程。
