@@ -354,4 +354,47 @@ describe("Gitee release orchestration", () => {
       }),
     )
   })
+
+  it("continues publishing when the optional latest attachment upload fails", async () => {
+    const latestPath = await createTemporaryFile(
+      "latest.json",
+      '{"version":"0.5.7"}',
+    )
+    const api = {
+      deleteAsset: vi.fn(),
+      ensureBranch: vi.fn(),
+      listAssets: vi.fn().mockResolvedValue([]),
+      updateRelease: vi.fn(),
+      uploadAsset: vi.fn().mockRejectedValue(new Error("upload timeout")),
+      upsertFile: vi.fn(),
+    }
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {})
+
+    await expect(
+      publishGiteeRelease({
+        api,
+        metadata: {
+          tag: "v0.5.7",
+          notes: "- resilient manifest publish",
+          version: "0.5.7",
+        },
+        release: { releaseId: 12 },
+        latestPath,
+      }),
+    ).resolves.toBeUndefined()
+
+    expect(api.updateRelease).toHaveBeenCalled()
+    expect(api.ensureBranch).toHaveBeenCalledWith("updater", "v0.5.7")
+    expect(api.upsertFile).toHaveBeenCalledWith(
+      expect.objectContaining({
+        branch: "updater",
+        content: '{"version":"0.5.7"}',
+        path: "latest.json",
+      }),
+    )
+    expect(warn).toHaveBeenCalledWith(
+      expect.stringContaining("Gitee latest.json attachment upload failed"),
+    )
+    warn.mockRestore()
+  })
 })

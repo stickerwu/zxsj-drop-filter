@@ -93,13 +93,21 @@ export async function publishGiteeRelease({
   release,
   latestPath,
 }) {
-  const currentAssets = await api.listAssets(release.releaseId)
-  for (const asset of currentAssets) {
-    if (asset.name === "latest.json") {
-      await api.deleteAsset(release.releaseId, asset.id)
+  try {
+    const currentAssets = await api.listAssets(release.releaseId)
+    for (const asset of currentAssets) {
+      if (asset.name === "latest.json") {
+        await api.deleteAsset(release.releaseId, asset.id)
+      }
     }
+    await api.uploadAsset(release.releaseId, latestPath, "latest.json")
+  } catch (error) {
+    console.warn(
+      `Gitee latest.json attachment upload failed; continuing with updater branch: ${
+        error instanceof Error ? error.message : String(error)
+      }`,
+    )
   }
-  await api.uploadAsset(release.releaseId, latestPath, "latest.json")
   await api.updateRelease(
     release.releaseId,
     releaseFields(metadata, false),
