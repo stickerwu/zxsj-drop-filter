@@ -95,8 +95,9 @@ describe("results tabs", () => {
       slots: [],
       dungeons: [],
     })
+    const visibleRecommendations = recommendations.slice(0, 2)
 
-    render(<HitItemTable recommendations={recommendations} />)
+    render(<HitItemTable recommendations={visibleRecommendations} />)
 
     const row = screen
       .getAllByRole("gridcell", { name: recommendations[1].treasureName })[0]
@@ -119,8 +120,13 @@ describe("results tabs", () => {
     const hiddenTreasure = recommendations.find(
       (item) => item.treasureName !== selectedTreasure,
     )!.treasureName
+    const visibleRecommendations = recommendations.filter(
+      (item) =>
+        item.treasureName === selectedTreasure
+        || item.treasureName === hiddenTreasure,
+    )
 
-    render(<DungeonDetailTable recommendations={recommendations} />)
+    render(<DungeonDetailTable recommendations={visibleRecommendations} />)
 
     await user.click(screen.getByRole("button", { name: "筛选宝鉴" }))
     await user.click(
@@ -146,8 +152,9 @@ describe("results tabs", () => {
     })
     const selectedTreasure = recommendations[0].treasureName
     const hiddenTreasure = recommendations[1].treasureName
+    const visibleRecommendations = recommendations.slice(0, 2)
 
-    render(<HitItemTable recommendations={recommendations} />)
+    render(<HitItemTable recommendations={visibleRecommendations} />)
 
     await user.click(screen.getByRole("button", { name: "筛选宝鉴" }))
     await user.click(
@@ -183,7 +190,7 @@ describe("results tabs", () => {
     const selectedSlot = selectedRecommendation.dungeonDetails
       .flatMap((detail) => detail.matchedEntries)[0].slot
 
-    render(<HitItemTable recommendations={recommendations} />)
+    render(<HitItemTable recommendations={[selectedRecommendation]} />)
 
     await user.click(screen.getByRole("button", { name: "筛选宝鉴" }))
     await user.click(
@@ -214,8 +221,9 @@ describe("results tabs", () => {
     })
     const selectedTreasure = recommendations[0].treasureName
     const restoredTreasure = recommendations[1].treasureName
+    const visibleRecommendations = recommendations.slice(0, 2)
 
-    render(<HitItemTable recommendations={recommendations} />)
+    render(<HitItemTable recommendations={visibleRecommendations} />)
 
     await user.click(screen.getByRole("button", { name: "筛选宝鉴" }))
     await user.click(
